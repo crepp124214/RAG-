@@ -9,13 +9,18 @@ import time
 # ==========================================
 # 1. 后端鉴权封装 (核心修改：不再通过 UI 传递 API_KEY)
 # ==========================================
-def get_backend_api_key():
-    """彻底封装在后端，优先读取 secrets，其次读取环境变量"""
-    api_key = st.secrets.get("DASHSCOPE_API_KEY") or os.environ.get("DASHSCOPE_API_KEY")
+def get_backend_config():
+    """获取后端 LLM 配置"""
+    provider = st.secrets.get("LLM_PROVIDER") or os.environ.get("LLM_PROVIDER", "dashscope")
+    api_key = (st.secrets.get("API_KEY") or os.environ.get("API_KEY") or
+               st.secrets.get("DASHSCOPE_API_KEY") or os.environ.get("DASHSCOPE_API_KEY"))
+    base_url = st.secrets.get("LLM_BASE_URL") or os.environ.get("LLM_BASE_URL")
+    
     if not api_key:
-        st.error("🚨 系统配置错误：未在后端检测到 DASHSCOPE_API_KEY。请检查 .streamlit/secrets.toml。")
-        st.stop() # 强制停止后续逻辑
-    return api_key
+        st.error("🚨 系统配置错误：未检测到 API_KEY。请检查 .streamlit/secrets.toml")
+        st.stop()
+    
+    return {"provider": provider, "api_key": api_key, "base_url": base_url}
 
 def init_session_state():
     if 'messages' not in st.session_state:
@@ -40,15 +45,13 @@ def init_session_state():
         st.session_state.vector_service = None
     if 'all_sources' not in st.session_state:
         st.session_state.all_sources = []
-    # 对话记忆服务
-    if 'conversation_memory' not in st.session_state:
-        api_key = st.secrets.get("DASHSCOPE_API_KEY") or os.environ.get("DASHSCOPE_API_KEY")
-        st.session_state.conversation_memory = ConversationMemory(api_key=api_key)
+    if 'llm_config' not in st.session_state:
+        st.session_state.llm_config = None
 
 # ==========================================
 # 2. 侧边栏 UI (移除 API 输入框)
 # ==========================================
-def render_sidebar(api_key):
+def render_sidebar(llm_config):
     st.sidebar.header("⚙️ 检索配置")
     similarity_threshold = st.sidebar.slider("检索相似度阈值", 0.0, 1.0, 0.6, 0.05)
     
@@ -82,7 +85,7 @@ def render_sidebar(api_key):
     if st.sidebar.button("🔄 加载本地历史库", use_container_width=True):
         with st.spinner("正在连接数据..."):
             try:
-                llm_svc = LLMService(api_key=api_key)
+                llm_svc = LLMService(**llm_config)
                 vec_svc = VectorService(embeddings=llm_svc.get_embeddings())
                 if vec_svc.vector_db:
                     st.session_state.vector_service = vec_svc
@@ -100,7 +103,7 @@ def render_sidebar(api_key):
                 try:
                     parser = DocumentParser()
                     chunks = parser.process_uploaded_file(uploaded_file)
-                    llm_svc = LLMService(api_key=api_key)
+                    llm_svc = LLMService(**llm_config)
                     vec_svc = VectorService(embeddings=llm_svc.get_embeddings())
                     vec_svc.add_documents(chunks)
                     st.session_state.vector_service = vec_svc
@@ -121,12 +124,12 @@ def render_sidebar(api_key):
 # ==========================================
 # 3. 核心 RAG 响应函数
 # ==========================================
-def generate_rag_response(prompt, api_key, threshold, selected_docs, placeholder, 
+def generate_rag_response(prompt, llm_config, threshold, selected_docs, placeholder,
                         use_parent_context=True, use_rerank=True):
     """
     生成RAG响应
     :param prompt: 用户查询
-    :param api_key: API密钥
+    :param llm_config: LLM配置字典
     :param threshold: 相似度阈值
     :param selected_docs: 选中的文档列表
     :param placeholder: 占位符
@@ -137,7 +140,7 @@ def generate_rag_response(prompt, api_key, threshold, selected_docs, placeholder
     sources = []
     try:
         print(f"🐛 DEBUG: 开始处理问题: {prompt[:50]}...")
-        llm_svc = LLMService(api_key=api_key)
+        llm_svc = LLMService(**llm_config)
         llm = llm_svc.get_llm(temperature=0.1)
         print(f"🐛 DEBUG: LLM服务初始化完成")
 
@@ -326,7 +329,7 @@ def main():
         with st.chat_message("assistant"):
             placeholder = st.empty()
             res, src = generate_rag_response(
-                prompt, api_key, threshold, selected_docs, placeholder, 
+                prompt, llm_config, threshold, selected_docs, placeholder,
                 use_parent_context, use_rerank
             )
             st.session_state.messages.append({"role": "assistant", "content": res, "sources": src})

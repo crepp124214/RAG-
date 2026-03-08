@@ -1,41 +1,69 @@
 import os
-from langchain_community.chat_models import ChatTongyi
-from langchain_community.embeddings import DashScopeEmbeddings
+from typing import Optional
 
 class LLMService:
-    def __init__(self, api_key: str = None):
+    def __init__(self, api_key: str = None, provider: str = None, base_url: str = None):
         """
-        初始化大模型服务
-        :param api_key: 阿里云 DashScope API Key。如果不传，则默认从环境变量 DASHSCOPE_API_KEY 中读取
+        初始化大模型服务，支持多种 API 提供商
+        :param api_key: API Key
+        :param provider: 提供商 (dashscope/openai/zhipu/deepseek 等)
+        :param base_url: 自定义 API 地址
         """
-        # 如果传入了 api_key，则设置环境变量
-        if api_key:
-            os.environ["DASHSCOPE_API_KEY"] = api_key
-            
-        # 确保环境变量中存在 API Key
-        if not os.environ.get("DASHSCOPE_API_KEY"):
-            raise ValueError("未找到 DASHSCOPE_API_KEY，请配置环境变量或在初始化时传入。")
+        self.provider = provider or os.environ.get("LLM_PROVIDER", "dashscope")
+        self.api_key = api_key or os.environ.get("API_KEY") or os.environ.get("DASHSCOPE_API_KEY")
+        self.base_url = base_url or os.environ.get("LLM_BASE_URL")
+        
+        if not self.api_key:
+            raise ValueError("未找到 API_KEY，请配置环境变量或在初始化时传入")
 
-    def get_llm(self, model_name: str = "qwen-plus", temperature: float = 0.1):
-        """
-        获取 Qwen 聊天模型实例
-        :param model_name: 模型名称，可选 qwen-turbo, qwen-plus, qwen-max 等
-        :param temperature: 温度值，越低回答越严谨（适合 RAG 场景，默认 0.1 防止编造）
-        """
-        return ChatTongyi(
-            model_name= model_name,
-            temperature= temperature,
-            streaming=True # 开启流式输出，提升页面响应体验
-        )
+    def get_llm(self, model_name: str = None, temperature: float = 0.1):
+        """获取聊天模型实例"""
+        if self.provider == "dashscope":
+            from langchain_community.chat_models import ChatTongyi
+            os.environ["DASHSCOPE_API_KEY"] = self.api_key
+            return ChatTongyi(model_name=model_name or "qwen-plus", temperature=temperature, streaming=True)
+        
+        elif self.provider == "openai":
+            from langchain_openai import ChatOpenAI
+            return ChatOpenAI(api_key=self.api_key, model=model_name or "gpt-3.5-turbo",
+                            temperature=temperature, streaming=True, base_url=self.base_url)
+        
+        elif self.provider == "zhipu":
+            from langchain_community.chat_models import ChatZhipuAI
+            return ChatZhipuAI(api_key=self.api_key, model=model_name or "glm-4",
+                             temperature=temperature, streaming=True)
+        
+        elif self.provider == "deepseek":
+            from langchain_openai import ChatOpenAI
+            return ChatOpenAI(api_key=self.api_key, model=model_name or "deepseek-chat",
+                            base_url=self.base_url or "https://api.deepseek.com",
+                            temperature=temperature, streaming=True)
+        
+        else:
+            raise ValueError(f"不支持的提供商: {self.provider}")
 
     def get_embeddings(self):
-        """
-        获取 Qwen 向量化模型实例 (Embedding)
-        用于将文档文本转化为向量存入 Chroma
-        """
-        return DashScopeEmbeddings(
-            model="text-embedding-v1"
-        )
+        """获取向量化模型实例"""
+        if self.provider == "dashscope":
+            from langchain_community.embeddings import DashScopeEmbeddings
+            os.environ["DASHSCOPE_API_KEY"] = self.api_key
+            return DashScopeEmbeddings(model="text-embedding-v1")
+        
+        elif self.provider == "openai":
+            from langchain_openai import OpenAIEmbeddings
+            return OpenAIEmbeddings(api_key=self.api_key, base_url=self.base_url)
+        
+        elif self.provider == "zhipu":
+            from langchain_community.embeddings import ZhipuAIEmbeddings
+            return ZhipuAIEmbeddings(api_key=self.api_key)
+        
+        elif self.provider == "deepseek":
+            from langchain_openai import OpenAIEmbeddings
+            return OpenAIEmbeddings(api_key=self.api_key,
+                                  base_url=self.base_url or "https://api.deepseek.com")
+        
+        else:
+            raise ValueError(f"不支持的提供商: {self.provider}")
 
 # 测试代码
 #if __name__ == "__main__":
