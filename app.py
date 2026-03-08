@@ -9,18 +9,14 @@ import time
 # ==========================================
 # 1. 后端鉴权封装 (核心修改：不再通过 UI 传递 API_KEY)
 # ==========================================
-def get_backend_config():
-    """获取后端 LLM 配置"""
-    provider = st.secrets.get("LLM_PROVIDER") or os.environ.get("LLM_PROVIDER", "dashscope")
-    api_key = (st.secrets.get("API_KEY") or os.environ.get("API_KEY") or
-               st.secrets.get("DASHSCOPE_API_KEY") or os.environ.get("DASHSCOPE_API_KEY"))
-    base_url = st.secrets.get("LLM_BASE_URL") or os.environ.get("LLM_BASE_URL")
-    
+def get_backend_api_key():
+    """彻底封装在后端，优先读取 secrets，其次读取环境变量"""
+    api_key = st.secrets.get("DASHSCOPE_API_KEY") or os.environ.get("DASHSCOPE_API_KEY")
     if not api_key:
-        st.error("🚨 系统配置错误：未检测到 API_KEY。请检查 .streamlit/secrets.toml")
+        st.error("🚨 系统配置错误：未在后端检测到 DASHSCOPE_API_KEY。请检查 .streamlit/secrets.toml。")
         st.stop()
-    
-    return {"provider": provider, "api_key": api_key, "base_url": base_url}
+    return api_key
+
 
 def init_session_state():
     if 'messages' not in st.session_state:
@@ -31,7 +27,6 @@ def init_session_state():
         st.session_state.vector_service = None
     if 'all_sources' not in st.session_state:
         st.session_state.all_sources = []
-    # 性能监控相关状态
     if 'performance_stats' not in st.session_state:
         st.session_state.performance_stats = {
             'retrieval_time': 0,
@@ -39,19 +34,11 @@ def init_session_state():
             'total_time': 0,
             'token_count': 0
         }
-    if 'vector_store_ready' not in st.session_state:
-        st.session_state.vector_store_ready = False
-    if 'vector_service' not in st.session_state:
-        st.session_state.vector_service = None
-    if 'all_sources' not in st.session_state:
-        st.session_state.all_sources = []
-    if 'llm_config' not in st.session_state:
-        st.session_state.llm_config = None
 
 # ==========================================
 # 2. 侧边栏 UI (移除 API 输入框)
 # ==========================================
-def render_sidebar(llm_config):
+def render_sidebar(api_key):
     st.sidebar.header("⚙️ 检索配置")
     similarity_threshold = st.sidebar.slider("检索相似度阈值", 0.0, 1.0, 0.6, 0.05)
     
@@ -85,7 +72,7 @@ def render_sidebar(llm_config):
     if st.sidebar.button("🔄 加载本地历史库", use_container_width=True):
         with st.spinner("正在连接数据..."):
             try:
-                llm_svc = LLMService(**llm_config)
+                llm_svc = LLMService(api_key=api_key)
                 vec_svc = VectorService(embeddings=llm_svc.get_embeddings())
                 if vec_svc.vector_db:
                     st.session_state.vector_service = vec_svc
@@ -103,7 +90,7 @@ def render_sidebar(llm_config):
                 try:
                     parser = DocumentParser()
                     chunks = parser.process_uploaded_file(uploaded_file)
-                    llm_svc = LLMService(**llm_config)
+                    llm_svc = LLMService(api_key=api_key)
                     vec_svc = VectorService(embeddings=llm_svc.get_embeddings())
                     vec_svc.add_documents(chunks)
                     st.session_state.vector_service = vec_svc
@@ -124,12 +111,12 @@ def render_sidebar(llm_config):
 # ==========================================
 # 3. 核心 RAG 响应函数
 # ==========================================
-def generate_rag_response(prompt, llm_config, threshold, selected_docs, placeholder,
+def generate_rag_response(prompt, api_key, threshold, selected_docs, placeholder,
                         use_parent_context=True, use_rerank=True):
     """
     生成RAG响应
     :param prompt: 用户查询
-    :param llm_config: LLM配置字典
+    :param api_key: DashScope API密钥
     :param threshold: 相似度阈值
     :param selected_docs: 选中的文档列表
     :param placeholder: 占位符
@@ -140,7 +127,7 @@ def generate_rag_response(prompt, llm_config, threshold, selected_docs, placehol
     sources = []
     try:
         print(f"🐛 DEBUG: 开始处理问题: {prompt[:50]}...")
-        llm_svc = LLMService(**llm_config)
+        llm_svc = LLMService(api_key=api_key)
         llm = llm_svc.get_llm(temperature=0.1)
         print(f"🐛 DEBUG: LLM服务初始化完成")
 
@@ -306,13 +293,9 @@ def main():
     st.set_page_config(page_title="AI 智能文档 Agent", layout="wide")
     init_session_state()
     
-    # 🌟 关键：从后端直接获取 Key，页面上不再显示输入框
     api_key = get_backend_api_key()
     
     threshold, selected_docs, use_parent_context, use_rerank, memory_frequency = render_sidebar(api_key)
-    
-    # 更新对话记忆服务的配置
-    st.session_state.conversation_memory.summary_frequency = memory_frequency
     
     st.title("🔍 智能文档问答 Agent")
     if not st.session_state.vector_store_ready:
@@ -329,7 +312,7 @@ def main():
         with st.chat_message("assistant"):
             placeholder = st.empty()
             res, src = generate_rag_response(
-                prompt, llm_config, threshold, selected_docs, placeholder,
+                prompt, api_key, threshold, selected_docs, placeholder,
                 use_parent_context, use_rerank
             )
             st.session_state.messages.append({"role": "assistant", "content": res, "sources": src})
