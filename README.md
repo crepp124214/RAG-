@@ -74,30 +74,45 @@ streamlit run app.py
 ## 项目结构
 
 RAG智能文档检索助手/
+
 ├── 📂 core/                     # 核心业务逻辑 (Backend)
-│   ├── __init__.py              # 🌟 标识这是一个 Python 包
+
+│   ├── __init__.py              
+
 │   ├── document_parser.py       # 文档加载、解析与切片逻辑
+
 │   ├── llm_service.py           # 大模型 API 调用 (通义千问及 Embedding)
+
 │   ├── vector_service.py        # Chroma 向量数据库的存取与检索
+
 │   ├── reranker_service.py      # BGE 重排检索服务 (高级 RAG 功能)
+
 │   └── conversation_memory.py   # 对话上下文与记忆管理
+
 │
 ├── 📂 chroma_db/                # 本地向量数据库 (程序运行时自动生成)
+
 │   ├── chroma.sqlite3           # 关系型元数据
+
 │   └── (其他二进制数据文件)
 │
 ├── 📄 app.py                    # 🌟 Streamlit 主界面 
+
 ├── 📄 run.py                    # Python 启动引导脚本 
+
 ├── 📄 start.bat                 # Windows 用户一键启动脚本
 │
 ├── 📄 requirements.txt          # 项目依赖包清单
+
 ├── 📄 .gitignore                # Git 忽略文件 
+
 ├── 📄 README.md                 # 项目详细说明文档 
+
 └── 📄 LICENSE                   # 开源协议
 
 ## 注意事项
 
-1. 需要有效的阿里云DashScope API密钥
+1. 需要有效的API密钥
 2. 首次使用需要上传文档并等待处理完成
 3. 大文档处理可能需要较长时间
 4. 建议定期清理向量数据库以释放存储空间
