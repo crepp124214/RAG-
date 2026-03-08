@@ -74,6 +74,7 @@ streamlit run app.py
 ## 项目结构
 
 RAG智能文档检索助手/
+
 ├── 📂 core/                     # 核心业务逻辑 (Backend)
 
 │   ├── __init__.py              
