@@ -40,7 +40,7 @@ pip install -r requirements.txt
 
 创建`.streamlit/secrets.toml`文件，添加以下内容：
 ```toml
-DASHSCOPE_API_KEY = "你的API密钥"
+DASHSCOPE_API_KEY = "你的阿里云百炼API密钥"
 ```
 
 或者设置环境变量：
