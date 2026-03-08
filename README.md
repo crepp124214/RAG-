@@ -90,18 +90,23 @@ RAG智能文档检索助手/
 │   └── conversation_memory.py   # 对话上下文与记忆管理
 
 │
+
 ├── 📂 chroma_db/                # 本地向量数据库 (程序运行时自动生成)
 
 │   ├── chroma.sqlite3           # 关系型元数据
 
 │   └── (其他二进制数据文件)
+
 │
+
 ├── 📄 app.py                    # 🌟 Streamlit 主界面 
 
 ├── 📄 run.py                    # Python 启动引导脚本 
 
 ├── 📄 start.bat                 # Windows 用户一键启动脚本
+
 │
+
 ├── 📄 requirements.txt          # 项目依赖包清单
 
 ├── 📄 .gitignore                # Git 忽略文件 
