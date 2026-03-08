@@ -44,23 +44,23 @@ def render_sidebar(api_key):
     
     # 高级检索选项
     with st.sidebar.expander("🔧 高级检索选项", expanded=False):
-        use_parent_context = st.sidebar.checkbox(
-            "启用父子文档检索", 
-            value=True, 
+        use_parent_context = st.checkbox(
+            "启用父子文档检索",
+            value=True,
             help="自动检索相关片段的父文档，提供更全面的上下文"
         )
         
-        use_rerank = st.sidebar.checkbox(
-            "启用重排优化", 
-            value=True, 
+        use_rerank = st.checkbox(
+            "启用重排优化",
+            value=True,
             help="使用重排模型对检索结果进行二次排序，提高准确性"
         )
         
-        memory_frequency = st.sidebar.slider(
-            "对话摘要频率", 
-            min_value=2, 
-            max_value=10, 
-            value=3, 
+        memory_frequency = st.slider(
+            "对话摘要频率",
+            min_value=2,
+            max_value=10,
+            value=3,
             step=1,
             help="每多少轮对话后进行一次摘要"
         )
