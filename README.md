@@ -45,7 +45,7 @@ DASHSCOPE_API_KEY = "你的API密钥"
 
 或者设置环境变量：
 ```bash
-export DASHSCOPE_API_KEY="你的API密钥"
+export DASHSCOPE_API_KEY="你的阿里云百炼API密钥"
 ```
 
 ## 使用说明
