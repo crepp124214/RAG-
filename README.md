@@ -1,137 +1,203 @@
-# RAG智能文档检索助手
+# RAG 智能文档检索助手
 
-## 项目概述
+## 项目简介
 
-这是一个基于Streamlit构建的RAG（检索增强生成）智能文档检索助手，利用阿里云通义千问大模型和Chroma向量数据库，实现高效的知识库问答系统。项目旨在为用户提供快速、准确的文档内容检索与问答服务。
+这是一个正在从 Streamlit 演示项目逐步重构为产品化系统的 RAG 智能文档检索助手。
 
-## 核心功能
+当前项目的目标不是继续叠加 Demo 功能，而是先完成第一阶段的“稳定底座”和“最小可运行产品”，建立清晰、可扩展、可测试、可维护的工程结构。
 
-1. **多格式文档支持**：支持PDF、DOCX、TXT等多种文档格式的上传与解析
-2. **智能向量检索**：使用Chroma向量数据库存储文档嵌入向量，实现语义相似度检索
-3. **大模型集成**：集成阿里云通义千问大模型，提供自然语言问答能力
-4. **对话记忆管理**：实现多轮对话的记忆与摘要功能，保持对话连贯性
-5. **性能监控**：实时监控检索时间、LLM生成时间等性能指标
-6. **重排优化**：使用BGE重排模型对检索结果进行二次排序，提高准确性
-7. **父子文档检索**：支持父子文档检索机制，提供更全面的上下文
+当前已经确认的第一阶段技术路线为：
 
-## 技术栈
+- 前端：Vue 3 + Vite + Element Plus + Pinia
+- 后端：FastAPI + Pydantic + Uvicorn + SQLAlchemy
+- 异步任务：RQ + Redis
+- 数据层：PostgreSQL + pgvector
+- 模型层：DashScope / 通义千问（Qwen）+ DashScope Embedding + BGE Reranker
+- 文档解析：PyMuPDF
+- 部署方式：Docker Compose
 
-- **前端框架**：Streamlit
-- **大模型服务**：阿里云通义千问（Qwen）
-- **向量数据库**：Chroma
-- **文档解析**：LangChain
-- **嵌入模型**：DashScope Embedding
-- **重排模型**：BGE Reranker
+---
 
-## 安装说明
+## 当前阶段目标
 
-1. 克隆项目到本地
-```bash
-git clone https://github.com/creep124214/RAG智能文档检索助手.git
-cd RAG智能文档检索助手
+第一阶段只聚焦最小可运行产品，目标是打通以下完整链路：
+
+- 文档上传
+- 异步文档解析
+- 文本分块
+- 向量化入库
+- 检索增强问答
+- 会话与消息持久化
+- SSE 流式输出
+
+---
+
+## 第一阶段明确不做
+
+以下能力不属于当前阶段范围：
+
+- Tool Calling
+- `web_search`
+- `document_lookup`
+- `python_executor`
+- 多模态主链路
+- Qwen-VL
+- Neo4j
+- GraphRAG
+- WebSocket
+- 权限系统
+- 多租户
+
+---
+
+## 当前仓库状态
+
+当前仓库仍保留旧版 Streamlit 结构，主要用于迁移参考：
+
+- `app.py`
+- `core/`
+- `chroma_db/`
+
+后续主架构目标目录为：
+
+```text
+frontend/
+backend/
+worker/
+docs/
+scripts/
+tests/
 ```
 
-2. 安装依赖
-```bash
-pip install -r requirements.txt
-```
+说明：
 
-3. 配置API密钥
+- 旧 `app.py` 和 `core/` 仅作为迁移来源
+- 新能力不应继续堆积在旧结构中
 
-创建`.streamlit/secrets.toml`文件，添加以下内容：
-```toml
-DASHSCOPE_API_KEY = "你的API密钥"
-```
+---
 
-或者设置环境变量：
-```bash
-export DASHSCOPE_API_KEY="你的阿里云百炼API密钥"
-```
+## 核心文档
 
-## 使用说明
+请优先阅读以下文档：
 
-1. 启动应用
-```bash
-streamlit run app.py
-```
+- [RAG-design-document.md](D:\agent开发项目\RAG智能文档检索助手\RAG-design-document.md)
+- [tech_stack.md](D:\agent开发项目\RAG智能文档检索助手\tech_stack.md)
+- [implementation-plan.md](D:\agent开发项目\RAG智能文档检索助手\implementation-plan.md)
+- [CLAUDE.md](D:\agent开发项目\RAG智能文档检索助手\CLAUDE.md)
+- [AGENTS.md](D:\agent开发项目\RAG智能文档检索助手\AGENTS.md)
 
-2. 在浏览器中打开显示的URL（通常是`http://localhost:8501`）
+它们的作用分别是：
 
-3. 使用步骤：
-   - 在侧边栏上传文档文件
-   - 等待文档处理完成
-   - 在聊天界面输入问题
-   - 查看回答和相关引用来源
+- `RAG-design-document.md`：系统级设计蓝图
+- `tech_stack.md`：技术栈选择依据
+- `implementation-plan.md`：第一阶段实施计划
+- `CLAUDE.md`：项目最高优先级规则
+- `AGENTS.md`：AI/开发者协作与交接规则
 
-## 配置选项
+---
 
-应用提供多种配置选项，可在侧边栏调整：
+## 推荐开发顺序
 
-- **启用父子文档检索**：是否检索相关片段的父文档
-- **启用重排优化**：是否使用重排模型提高检索准确性
-- **对话摘要频率**：设置每多少轮对话后进行一次摘要
+默认按以下顺序推进：
 
-## 项目结构
+1. 设计新目录结构
+2. 搭建 FastAPI 后端骨架
+3. 搭建 Vue 3 前端骨架
+4. 接入 PostgreSQL + pgvector
+5. 接入 RQ + Redis
+6. 打通文档上传与异步入库
+7. 打通基础检索问答
+8. 完成会话与消息持久化
+9. 完成 SSE 流式输出
 
-RAG智能文档检索助手/
+---
 
-├── 📂 core/                     # 核心业务逻辑 (Backend)
+## 开发原则
 
-│   ├── __init__.py              
+项目开发必须遵守以下原则：
 
-│   ├── document_parser.py       # 文档加载、解析与切片逻辑
+- 先设计，后编码，最后验证
+- 优先小步迭代，不做一次性大爆炸改造
+- 命名语义化
+- 单一职责
+- DRY
+- KISS
+- 配置与代码分离
+- 错误处理不可吞异常
+- 测试必须覆盖失败路径
 
-│   ├── llm_service.py           # 大模型 API 调用 (通义千问及 Embedding)
+---
 
-│   ├── vector_service.py        # Chroma 向量数据库的存取与检索
+## 当前仓库文件说明
 
-│   ├── reranker_service.py      # BGE 重排检索服务 (高级 RAG 功能)
+### 现有文件
 
-│   └── conversation_memory.py   # 对话上下文与记忆管理
+- `app.py`：旧版 Streamlit 主入口
+- `run.py`：旧版运行辅助脚本
+- `start.bat`：Windows 启动脚本
+- `core/`：旧版核心逻辑
+- `scripts/`：迁移辅助脚本
 
-│
+### 新增规范文件
 
-├── 📂 chroma_db/                # 本地向量数据库 (程序运行时自动生成)
+- `CLAUDE.md`：项目级规则、阶段边界、开发规范
+- `AGENTS.md`：代理分工、交接与验收规范
+- `RAG-design-document.md`：系统架构设计文档
+- `tech_stack.md`：技术栈推荐文档
+- `implementation-plan.md`：实施计划文档
 
-│   ├── chroma.sqlite3           # 关系型元数据
+---
 
-│   └── (其他二进制数据文件)
+## 环境与配置
 
-│
+当前项目仍处于重构前期，配置方式正在从旧结构迁移到新结构。
 
-├── 📄 app.py                    # 🌟 Streamlit 主界面 
+第一阶段建议统一使用环境变量管理：
 
-├── 📄 run.py                    # Python 启动引导脚本 
+- `DASHSCOPE_API_KEY`
+- `DATABASE_URL`
+- `REDIS_URL`
+- `FILE_STORAGE_PATH`
+- `APP_ENV`
 
-├── 📄 start.bat                 # Windows 用户一键启动脚本
+后续应补齐：
 
-│
+- `.env.example`
+- Docker Compose 运行配置
+- 后端统一配置模块
+- 前端环境配置
 
-├── 📄 requirements.txt          # 项目依赖包清单
+---
 
-├── 📄 .gitignore                # Git 忽略文件 
+## 测试与验证要求
 
-├── 📄 README.md                 # 项目详细说明文档 
+第一阶段所有开发都必须满足：
 
-└── 📄 LICENSE                   # 开源协议
+- 核心逻辑有单元测试
+- 接口与数据库交互有集成测试
+- 至少保留一条“上传 -> 入库 -> 问答”的主链路测试
+- 成功路径和失败路径都必须验证
 
-## 注意事项
+---
 
-1. 需要有效的API密钥
-2. 首次使用需要上传文档并等待处理完成
-3. 大文档处理可能需要较长时间
-4. 建议定期清理向量数据库以释放存储空间
+## 当前最重要的约束
 
-## 许可证
+如果你要继续开发这个仓库，请先记住这几点：
 
-本项目采用MIT许可证 - 详见LICENSE文件
+- 不要把第一阶段做成大而全平台
+- 不要提前引入 Tool Calling、多模态、GraphRAG
+- 不要继续把长期架构堆在 Streamlit 旧结构上
+- 不要脱离 `CLAUDE.md`、`AGENTS.md`、设计文档和实施计划擅自发挥
 
-## 贡献
+---
 
-欢迎提交Issue和Pull Request来改进本项目！
+## 后续建议
 
-## 联系方式
+在当前基础上，最值得优先推进的是：
 
-如有问题或建议，请通过以下方式联系：
-- 提交Issue
-- 发送邮件至：Lin1242146531@gmail.com
+- 建立 `frontend/`、`backend/`、`worker/` 目录骨架
+- 补齐 `.env.example`
+- 建立 FastAPI 基础应用
+- 建立 Vue 3 基础工作台
+- 开始第一阶段实施计划中的任务 1 到任务 5
+
