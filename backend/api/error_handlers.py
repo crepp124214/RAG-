@@ -40,14 +40,13 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(StarletteHTTPException)
     async def handle_http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
         code = "not_found" if exc.status_code == 404 else "http_error"
-        detail = str(exc.detail)
         message = "请求的资源不存在" if exc.status_code == 404 else "请求处理失败"
         return JSONResponse(
             status_code=exc.status_code,
             content=error_response(
                 message=message,
                 code=code,
-                detail=detail,
+                detail=str(exc.detail),
             ),
         )
 

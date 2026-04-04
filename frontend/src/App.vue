@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { onMounted } from "vue"
 
+import ChatWorkspacePanel from "@/components/chat/ChatWorkspacePanel.vue"
+import SessionSidebar from "@/components/chat/SessionSidebar.vue"
+import DocumentManagerPanel from "@/components/documents/DocumentManagerPanel.vue"
+import TaskStatusPanel from "@/components/documents/TaskStatusPanel.vue"
 import { useSystemStore } from "@/stores/system"
 
 const systemStore = useSystemStore()
@@ -35,85 +39,43 @@ onMounted(() => {
         </div>
       </header>
 
+      <el-alert
+        v-if="systemStore.errorMessage"
+        class="top-alert"
+        :closable="false"
+        :description="systemStore.errorMessage"
+        show-icon
+        title="后端连接失败"
+        type="error"
+      />
+
+      <el-alert
+        v-else-if="systemStore.isLoading"
+        class="top-alert"
+        :closable="false"
+        description="正在请求 /api/health 验证前后端联通情况。"
+        show-icon
+        title="正在检查后端健康状态"
+        type="info"
+      />
+
+      <el-alert
+        v-else-if="systemStore.healthStatus"
+        class="top-alert"
+        :closable="false"
+        :description="`服务状态：${systemStore.healthStatus}，环境：${systemStore.appEnv ?? 'unknown'}`"
+        show-icon
+        title="后端连接成功"
+        type="success"
+      />
+
       <main class="workspace-grid">
-        <section class="panel sessions-panel">
-          <div class="panel-header">
-            <h2>会话列表</h2>
-            <span>为后续多轮问答预留</span>
-          </div>
-          <el-empty description="第 5 步仅搭建前端骨架，会话能力将在后续步骤接入。" />
-        </section>
-
-        <section class="panel chat-panel">
-          <div class="panel-header">
-            <h2>聊天工作台</h2>
-            <span>当前只验证布局和健康检查联通</span>
-          </div>
-
-          <el-alert
-            v-if="systemStore.errorMessage"
-            :closable="false"
-            :description="systemStore.errorMessage"
-            show-icon
-            title="后端连接失败"
-            type="error"
-          />
-
-          <el-alert
-            v-else-if="systemStore.isLoading"
-            :closable="false"
-            description="正在请求 /api/health 验证前后端联通情况。"
-            show-icon
-            title="正在检查后端健康状态"
-            type="info"
-          />
-
-          <el-alert
-            v-else-if="systemStore.healthStatus"
-            :closable="false"
-            :description="`服务状态：${systemStore.healthStatus}，环境：${systemStore.appEnv ?? 'unknown'}`"
-            show-icon
-            title="后端连接成功"
-            type="success"
-          />
-
-          <div class="chat-placeholder">
-            <el-card shadow="never">
-              <template #header>聊天输入区占位</template>
-              <p>后续步骤将在这里接入会话、消息列表、同步问答和 SSE 流式输出。</p>
-            </el-card>
-
-            <el-card shadow="never">
-              <template #header>引用展示区占位</template>
-              <p>当前阶段先保留布局位置，后续检索和引用字段完成后再接入真实数据。</p>
-            </el-card>
-          </div>
-        </section>
-
+        <SessionSidebar />
+        <ChatWorkspacePanel />
         <section class="panel right-column">
           <div class="stack">
-            <section class="sub-panel">
-              <div class="panel-header">
-                <h2>文档管理</h2>
-                <span>上传与文档列表将在后续步骤实现</span>
-              </div>
-              <el-empty description="文档上传、列表和详情接口尚未接入。" />
-            </section>
-
-            <section class="sub-panel">
-              <div class="panel-header">
-                <h2>任务状态</h2>
-                <span>异步任务链路将在后续步骤实现</span>
-              </div>
-              <ul class="status-list">
-                <li>UPLOADED</li>
-                <li>PARSING</li>
-                <li>CHUNKING</li>
-                <li>EMBEDDING</li>
-                <li>READY</li>
-                <li>FAILED</li>
-              </ul>
-            </section>
+            <DocumentManagerPanel />
+            <TaskStatusPanel />
           </div>
         </section>
       </main>
@@ -145,7 +107,11 @@ onMounted(() => {
   justify-content: space-between;
   gap: 16px;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
+}
+
+.top-alert {
+  margin-bottom: 18px;
 }
 
 .eyebrow {
@@ -183,7 +149,7 @@ h2 {
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 320px;
+  grid-template-columns: 280px minmax(0, 1fr) 360px;
   gap: 20px;
 }
 
@@ -212,35 +178,9 @@ h2 {
   font-size: 13px;
 }
 
-.chat-placeholder {
-  display: grid;
-  gap: 16px;
-  margin-top: 16px;
-}
-
 .stack {
   display: grid;
   gap: 20px;
-}
-
-.sub-panel {
-  padding: 20px;
-}
-
-.status-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 10px;
-}
-
-.status-list li {
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: #f8fafc;
-  color: #334155;
-  font-weight: 600;
 }
 
 @media (max-width: 1100px) {

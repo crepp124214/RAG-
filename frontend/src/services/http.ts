@@ -24,15 +24,23 @@ export interface ApiEnvelope<T> {
   error: ApiErrorBody | null
 }
 
+export function buildApiUrl(path: string): string {
+  return `${API_BASE_URL}${path}`
+}
+
 export async function requestJson<T>(
   path: string,
   init?: RequestInit,
 ): Promise<ApiEnvelope<T>> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
+  const headers = new Headers(init?.headers ?? {})
+  const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData
+
+  if (!isFormData && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json")
+  }
+
+  const response = await fetch(buildApiUrl(path), {
+    headers,
     ...init,
   })
 

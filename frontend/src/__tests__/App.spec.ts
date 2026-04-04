@@ -17,7 +17,7 @@ describe("App", () => {
     mockFetchHealth.mockReset()
   })
 
-  it("渲染基础工作台布局并显示健康成功提示", async () => {
+  it("渲染整体工作台布局并显示健康检查成功提示", async () => {
     mockFetchHealth.mockResolvedValue({
       status: "ok",
       app_name: "rag-system",
@@ -27,6 +27,12 @@ describe("App", () => {
     const wrapper = mount(App, {
       global: {
         plugins: [createPinia(), ElementPlus],
+        stubs: {
+          SessionSidebar: { template: "<div>会话列表区域</div>" },
+          ChatWorkspacePanel: { template: "<div>聊天工作台区域</div>" },
+          DocumentManagerPanel: { template: "<div>文档管理区域</div>" },
+          TaskStatusPanel: { template: "<div>任务状态区域</div>" },
+        },
       },
     })
 
@@ -34,10 +40,10 @@ describe("App", () => {
     await Promise.resolve()
 
     expect(wrapper.text()).toContain("RAG 智能文档检索助手")
-    expect(wrapper.text()).toContain("会话列表")
-    expect(wrapper.text()).toContain("聊天工作台")
-    expect(wrapper.text()).toContain("文档管理")
-    expect(wrapper.text()).toContain("任务状态")
+    expect(wrapper.text()).toContain("会话列表区域")
+    expect(wrapper.text()).toContain("聊天工作台区域")
+    expect(wrapper.text()).toContain("文档管理区域")
+    expect(wrapper.text()).toContain("任务状态区域")
     expect(wrapper.text()).toContain("后端连接成功")
   })
 
@@ -47,6 +53,12 @@ describe("App", () => {
     const wrapper = mount(App, {
       global: {
         plugins: [createPinia(), ElementPlus],
+        stubs: {
+          SessionSidebar: { template: "<div>会话列表区域</div>" },
+          ChatWorkspacePanel: { template: "<div>聊天工作台区域</div>" },
+          DocumentManagerPanel: { template: "<div>文档管理区域</div>" },
+          TaskStatusPanel: { template: "<div>任务状态区域</div>" },
+        },
       },
     })
 

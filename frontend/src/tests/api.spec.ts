@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
+import { uploadDocument } from "@/services/documents"
 import { requestJson } from "@/services/http"
 import { fetchHealth } from "@/services/system"
 
@@ -47,6 +48,32 @@ describe("requestJson", () => {
       code: "SERVICE_UNAVAILABLE",
       status: 503,
     })
+  })
+
+  it("上传 FormData 时不会强行附加 JSON Content-Type", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        message: "ok",
+        data: {
+          document_id: "doc-1",
+          task_id: "task-1",
+        },
+        error: null,
+      }),
+    })
+
+    vi.stubGlobal("fetch", fetchMock)
+
+    await uploadDocument(new File(["hello"], "demo.txt", { type: "text/plain" }))
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const headers = new Headers(init.headers)
+
+    expect(init.body).toBeInstanceOf(FormData)
+    expect(headers.has("Content-Type")).toBe(false)
   })
 })
 
