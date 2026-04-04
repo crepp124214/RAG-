@@ -13,6 +13,18 @@
 - 多模态解析：PyMuPDF + pdfplumber
 - 部署方式：Docker Compose
 
+第一阶段冻结实现口径：
+
+- 单用户、无登录、无鉴权、无多租户
+- ORM 与迁移：`SQLAlchemy + Alembic`
+- 文档去重策略：重复上传提示“已存在”，不重复入库
+- 删除策略：硬删除
+- 任务模型：一文档多任务
+- 会话标题：首条问题自动截断生成
+- 后端测试：`pytest`
+- 前端测试：`vitest + vue-test-utils`
+- 旧 `core/` 迁移方式：尽量直接复用后包一层
+
 这套方案的核心特点是：
 
 - 足够简单，容易从当前 Streamlit Demo 平滑迁移

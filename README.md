@@ -152,20 +152,34 @@ tests/
 
 当前项目仍处于重构前期，配置方式正在从旧结构迁移到新结构。
 
-第一阶段建议统一使用环境变量管理：
+第 3 步已经冻结了统一配置入口，当前约定如下：
 
-- `DASHSCOPE_API_KEY`
+- 根目录使用 `.env.example` 作为全项目变量示例
+- `backend/.env.example` 只保留后端所需变量
+- `frontend/.env.example` 只保留前端所需变量
+- 后端统一从 `backend/app/settings/config.py` 读取配置
+- 前端统一从 `frontend/src/config/env.ts` 读取 `VITE_API_BASE_URL`
+
+第一阶段后端关键环境变量：
+
+- `APP_ENV`
 - `DATABASE_URL`
 - `REDIS_URL`
+- `DASHSCOPE_API_KEY`
 - `FILE_STORAGE_PATH`
-- `APP_ENV`
 
-后续应补齐：
+第一阶段已冻结的默认配置：
 
-- `.env.example`
-- Docker Compose 运行配置
-- 后端统一配置模块
-- 前端环境配置
+- `CHUNK_SIZE=800`
+- `CHUNK_OVERLAP=150`
+- `VECTOR_TOP_K=12`
+- `RERANK_TOP_N=5`
+
+说明：
+
+- 缺少关键后端变量时，配置加载必须失败并给出明确错误
+- 前端默认 API 地址为 `http://127.0.0.1:8000`
+- 旧 `core/` 中零散读取环境变量的方式后续将逐步迁移到统一配置模块
 
 ---
 

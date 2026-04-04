@@ -52,26 +52,73 @@
 
 文件说明：
 
-- `game-design-document.md`：项目设计文档
-- `tech-stack.md`：项目技术栈说明
-- `implementation-plan.md`：第一阶段实施计划
-- `progress.md`：已完成步骤记录
-- `architecture.md`：项目结构与文件作用登记
+- `game-design-document.md`：项目总体设计文档，负责长期架构目标、阶段演进路线和全局方案，不负责冻结第一阶段实现细节
+- `tech-stack.md`：项目技术栈说明，负责第一阶段技术选型结论与冻结实现口径
+- `implementation-plan.md`：第一阶段实施计划，负责第一阶段边界、默认值、执行顺序、验证要求，是当前第一阶段实施的主事实来源
+- `progress.md`：已完成步骤记录，负责记录每一步的实现内容、验证结果和交接备注，不提前记录未验证通过的完成项
+- `architecture.md`：项目结构与文件作用登记，负责解释目录、文件、模块、接口、数据结构与文档职责边界
+
+### 第一阶段文档职责边界
+
+- `game-design-document.md` 负责“总体设计方案”
+- `tech-stack.md` 负责“技术选型与冻结实现口径”
+- `implementation-plan.md` 负责“第一阶段执行边界与默认参数”
+- `progress.md` 负责“实施进展与验证结果”
+- `architecture.md` 负责“真实结构、文件职责与系统洞察”
+
+当前约定：
+
+- 如需理解项目长期目标，先读 `game-design-document.md`
+- 如需理解第一阶段应采用什么技术和默认口径，先读 `tech-stack.md`
+- 如需执行第一阶段开发任务，先读 `implementation-plan.md`
+- 如需判断某一步是否已完成并验证通过，先读 `progress.md`
+- 如需理解仓库中文件和目录各自承担什么职责，先读 `architecture.md`
 
 ### `frontend/`
 
 - 作用：前端应用目录
-- 当前状态：待实现
+- 当前状态：目录骨架已创建，配置入口已建立，具体工程尚未初始化
+- 说明：当前仅新增了前端环境变量示例和 API 地址读取入口，不包含 Vue 3 工程初始化、依赖安装或页面实现
 
 ### `backend/`
 
 - 作用：后端 API 与业务服务目录
-- 当前状态：待实现
+- 当前状态：目录骨架已创建，统一配置模块和 FastAPI 基础应用已建立
+- 说明：当前已具备后端统一配置读取入口、应用入口、健康检查和统一异常处理，但仍不包含数据库接入或业务数据路由实现
 
 ### `worker/`
 
 - 作用：异步任务 Worker 目录
-- 当前状态：待实现
+- 当前状态：目录骨架已创建，具体 Worker 入口尚未实现
+- 说明：第 2 步只建立结构占位，不包含 RQ Worker 启动逻辑或任务定义
+
+### 第 2 步新增目录骨架洞察
+
+- `frontend/`、`backend/`、`worker/` 现在已经成为新架构的正式目标根目录
+- `backend/api/` 负责后续接口协议层
+- `backend/app/` 负责后续业务编排与领域逻辑
+- `backend/infrastructure/` 负责后续外部系统适配
+- `backend/tests/` 负责后续后端自动化测试
+- 当前这些目录仅表示“结构已确定”，不表示“模块已实现”
+- 旧 `app.py` 与 `core/` 仍然保留为迁移参考源，后续迁移应从旧结构抽取能力，落入新结构，而不是继续把长期实现堆在旧入口上
+
+### 第 3 步新增统一配置洞察
+
+- 第一阶段配置事实来源已经固定为示例环境文件 + 统一读取入口，而不是继续在业务代码中零散读取 `os.environ`
+- 后端配置统一入口位于 `backend/app/settings/config.py`，负责校验关键变量、默认值和参数约束
+- 前端配置统一入口位于 `frontend/src/config/env.ts`，当前只负责读取 `VITE_API_BASE_URL`
+- 根目录 `.env.example` 用于给整个仓库提供统一变量清单；`backend/.env.example` 和 `frontend/.env.example` 分别服务于后端与前端开发者
+- 第 3 步已经把第一阶段冻结的默认参数落入配置层，包括分块大小、重叠长度、召回数和重排保留数
+- 配置校验测试已经进入 `backend/tests/test_config.py`，说明“缺配置失败、完整配置通过”已成为可重复验证的行为，而不是口头约定
+
+### 第 4 步新增 FastAPI 基础应用洞察
+
+- FastAPI 基础应用的真实入口已经固定在 `backend/main.py`，后续后端启动应围绕 `create_app` 工厂展开
+- 后端现在已经具备统一成功响应结构和统一错误响应结构，说明接口风格事实来源已从本步开始落到代码
+- 健康检查能力已经落在 `backend/api/routes/system.py`，后续前端或运维验证应优先依赖 `/api/health`
+- `backend/api/router.py` 已经成为后续路由注册中心，新增业务路由应通过这里统一挂载，而不是分散在入口文件中硬编码
+- `backend/api/routes/documents.py`、`tasks.py`、`chat.py` 当前只是空路由占位，表示边界已冻结，不表示业务接口已实现
+- 运行时配置加载已使用 `lifespan` 接管，避免在模块导入阶段因为缺配置而提前崩溃
 
 ### `core/`
 
@@ -86,6 +133,186 @@
 ### `README.md`
 
 - 作用：项目总览、阶段目标、使用说明
+
+### `requirements.txt`
+
+- 作用：Python 依赖声明文件
+- 所属模块：根目录依赖管理
+- 输入：无
+- 输出：后端运行和测试所需依赖集合
+- 依赖：无
+- 是否可删除：否
+- 备注：第 4 步已补入 FastAPI、Pydantic、Uvicorn，后续如引入 SQLAlchemy、Alembic 等基础依赖也应继续在这里登记
+
+### `.env.example`
+
+- 作用：全项目环境变量示例文件
+- 所属模块：根目录配置
+- 输入：无
+- 输出：为后端与前端提供第一阶段统一变量清单
+- 依赖：无
+- 是否可删除：否
+- 备注：当前是第一阶段环境变量事实来源之一，包含数据库、Redis、DashScope、文件存储和默认检索参数
+
+### `backend/.env.example`
+
+- 作用：后端环境变量示例文件
+- 所属模块：后端配置
+- 输入：无
+- 输出：为后端服务提供最小必需配置模板
+- 依赖：无
+- 是否可删除：否
+- 备注：与根目录 `.env.example` 保持同口径，但只保留后端需要的变量
+
+### `frontend/.env.example`
+
+- 作用：前端环境变量示例文件
+- 所属模块：前端配置
+- 输入：无
+- 输出：为前端提供 `VITE_API_BASE_URL` 示例值
+- 依赖：无
+- 是否可删除：否
+- 备注：当前第一阶段前端只冻结了 API 基础地址这一个配置入口
+
+### `backend/app/settings/__init__.py`
+
+- 作用：统一导出后端配置模块的公共入口
+- 所属模块：后端配置
+- 输入：`config.py`
+- 输出：`BackendSettings`、`load_backend_settings`、`get_backend_settings` 等可复用导出
+- 依赖：`backend/app/settings/config.py`
+- 是否可删除：否
+- 备注：后续后端代码应从这里或 `config.py` 统一读取配置，而不是在业务模块中直接读取环境变量
+
+### `backend/app/settings/config.py`
+
+- 作用：后端统一配置读取与校验模块
+- 所属模块：后端配置
+- 输入：`.env` 文件、系统环境变量、显式覆盖参数
+- 输出：`BackendSettings` 配置对象
+- 依赖：`python-dotenv`
+- 是否可删除：否
+- 备注：当前负责校验 `APP_ENV`、`DATABASE_URL`、`REDIS_URL`、`DASHSCOPE_API_KEY`、`FILE_STORAGE_PATH` 以及分块和检索默认参数关系
+
+### `backend/main.py`
+
+- 作用：FastAPI 应用入口与应用工厂
+- 所属模块：后端应用入口
+- 输入：后端配置对象
+- 输出：可运行的 FastAPI 应用实例
+- 依赖：`backend/app/settings/`、`backend/api/router.py`、`backend/api/error_handlers.py`
+- 是否可删除：否
+- 备注：当前负责创建应用、注册异常处理、挂载 `/api` 路由并在 `lifespan` 阶段加载运行时配置
+
+### `backend/app/exceptions.py`
+
+- 作用：项目级业务异常定义
+- 所属模块：后端应用层
+- 输入：业务错误消息、错误码和状态码
+- 输出：可被 API 层统一捕获的异常对象
+- 依赖：无
+- 是否可删除：否
+- 备注：当前通过 `AppError` 承载业务错误，避免各路由直接手写不一致的错误响应
+
+### `backend/api/schemas/response.py`
+
+- 作用：统一 API 响应结构定义
+- 所属模块：后端 API 协议层
+- 输入：成功或失败场景的消息与数据
+- 输出：标准化响应字典和模型
+- 依赖：`pydantic`
+- 是否可删除：否
+- 备注：当前统一了 `success/message/data/error` 四段结构，后续接口应沿用这一格式
+
+### `backend/api/error_handlers.py`
+
+- 作用：统一异常处理注册模块
+- 所属模块：后端 API 协议层
+- 输入：FastAPI 应用实例和运行时异常
+- 输出：标准错误响应
+- 依赖：`fastapi`、`backend/app/exceptions.py`、`backend/api/schemas/response.py`
+- 是否可删除：否
+- 备注：当前已覆盖业务异常、请求校验异常、404/HTTP 异常和未处理异常
+
+### `backend/api/router.py`
+
+- 作用：后端路由聚合入口
+- 所属模块：后端 API 协议层
+- 输入：各子路由模块
+- 输出：统一的 `api_router`
+- 依赖：`backend/api/routes/`
+- 是否可删除：否
+- 备注：后续新增文档、任务、聊天、会话路由都应通过这里聚合注册
+
+### `backend/api/routes/system.py`
+
+- 作用：系统级基础路由模块
+- 所属模块：后端 API 协议层
+- 输入：应用状态中的配置对象
+- 输出：健康检查接口响应
+- 依赖：`backend/api/schemas/response.py`
+- 是否可删除：否
+- 备注：当前仅实现 `/health`，返回应用名、环境和服务状态
+
+### `backend/api/routes/documents.py`
+
+- 作用：文档相关路由占位模块
+- 所属模块：后端 API 协议层
+- 输入：后续文档接口实现
+- 输出：`/documents` 路由边界
+- 依赖：`fastapi`
+- 是否可删除：否
+- 备注：当前为空占位，表示文档接口未来会集中在这里实现
+
+### `backend/api/routes/tasks.py`
+
+- 作用：任务相关路由占位模块
+- 所属模块：后端 API 协议层
+- 输入：后续任务接口实现
+- 输出：`/tasks` 路由边界
+- 依赖：`fastapi`
+- 是否可删除：否
+- 备注：当前为空占位，表示任务接口未来会集中在这里实现
+
+### `backend/api/routes/chat.py`
+
+- 作用：聊天相关路由占位模块
+- 所属模块：后端 API 协议层
+- 输入：后续聊天和会话接口实现
+- 输出：`/chat` 路由边界
+- 依赖：`fastapi`
+- 是否可删除：否
+- 备注：当前为空占位，表示聊天接口未来会集中在这里实现
+
+### `backend/tests/test_config.py`
+
+- 作用：统一配置模块测试
+- 所属模块：后端测试
+- 输入：配置模块和示例环境变量
+- 输出：配置加载与失败路径的自动化验证结果
+- 依赖：`pytest`、`backend/app/settings/config.py`
+- 是否可删除：否
+- 备注：当前覆盖完整配置加载、关键变量缺失报错、分块参数关系校验
+
+### `backend/tests/test_app.py`
+
+- 作用：FastAPI 基础应用接口测试
+- 所属模块：后端测试
+- 输入：应用工厂、测试客户端和伪错误路由
+- 输出：健康检查、标准错误结构和文档页可用性的验证结果
+- 依赖：`pytest`、`fastapi.testclient`、`backend/main.py`
+- 是否可删除：否
+- 备注：当前覆盖 `/api/health`、404 标准错误、`/docs` 页面、业务异常和系统异常转换
+
+### `frontend/src/config/env.ts`
+
+- 作用：前端环境变量读取入口
+- 所属模块：前端配置
+- 输入：`import.meta.env`
+- 输出：标准化后的 `API_BASE_URL`
+- 依赖：Vite 环境变量机制
+- 是否可删除：否
+- 备注：当前只负责读取并清洗 `VITE_API_BASE_URL`，后续前端网络层应统一从这里取值
 
 ### `CLAUDE.md`
 
@@ -219,3 +446,11 @@
 
 - 初始化 `memory-bank/architecture.md`
 - 建立根目录说明、目标架构说明、登记模板和状态流转模板
+- 根据第 1 步执行结果，补充 `memory-bank` 核心文档的职责边界
+- 明确 `game-design-document.md` 保持总体设计定位，第一阶段冻结事实来源以 `implementation-plan.md` 和 `tech-stack.md` 为准
+- 根据第 2 步执行结果，更新 `frontend/`、`backend/`、`worker/` 的当前状态说明
+- 补充新架构目录骨架已经落地、但业务实现尚未开始的结构洞察
+- 根据第 3 步执行结果，补充统一配置入口、示例环境文件和配置测试的文件职责说明
+- 明确第一阶段配置事实来源已经从“口头约定”转为“示例文件 + 配置模块 + 自动化测试”
+- 根据第 4 步执行结果，补充 FastAPI 应用入口、统一异常处理、健康检查路由和接口测试的文件职责说明
+- 明确后端基础应用事实来源已经从“计划约定”转为“应用工厂 + 路由聚合 + 统一响应/异常处理 + 自动化测试”
