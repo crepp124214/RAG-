@@ -1,9 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
+import os
 from collections.abc import Sequence
 
 from redis import Redis
-from rq import Queue, Worker
+from rq import Queue, SimpleWorker, Worker
+from rq.timeouts import TimerDeathPenalty
 
 from backend.app.settings import get_backend_settings
 from backend.infrastructure.queue import (
@@ -12,6 +14,19 @@ from backend.infrastructure.queue import (
     create_redis_client,
     create_queue,
 )
+
+
+class WindowsSimpleWorker(SimpleWorker):
+    """Windows 环境使用线程计时器超时控制，避免依赖 SIGALRM。"""
+
+    death_penalty_class = TimerDeathPenalty
+
+
+def resolve_worker_class() -> type[Worker]:
+    """Windows 环境使用无 fork 的 worker，其余平台沿用默认 Worker。"""
+    if os.name == "nt":
+        return WindowsSimpleWorker
+    return Worker
 
 
 def create_worker(
@@ -27,7 +42,8 @@ def create_worker(
         )
         for queue_name in resolved_queue_names
     ]
-    return Worker(
+    worker_class = resolve_worker_class()
+    return worker_class(
         queues=queues,
         connection=redis_client,
     )

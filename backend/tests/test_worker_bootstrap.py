@@ -1,9 +1,10 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 import importlib
 
 import pytest
+from rq.timeouts import TimerDeathPenalty
 
 from backend.infrastructure.queue.queue import DEFAULT_QUEUE_NAME
 worker_main = importlib.import_module("worker.main")
@@ -33,7 +34,7 @@ def test_create_worker_subscribes_to_target_queues(monkeypatch: pytest.MonkeyPat
 
     fake_redis = FakeRedisClient()
     monkeypatch.setattr(worker_main, "create_queue", fake_create_queue)
-    monkeypatch.setattr(worker_main, "Worker", FakeWorker)
+    monkeypatch.setattr(worker_main, "resolve_worker_class", lambda: FakeWorker)
 
     worker = worker_main.create_worker(fake_redis, queue_names=["documents", "system"])
 
@@ -56,8 +57,21 @@ def test_create_worker_uses_default_queue_name(monkeypatch: pytest.MonkeyPatch) 
             self.connection = connection
 
     monkeypatch.setattr(worker_main, "create_queue", fake_create_queue)
-    monkeypatch.setattr(worker_main, "Worker", FakeWorker)
+    monkeypatch.setattr(worker_main, "resolve_worker_class", lambda: FakeWorker)
 
     worker_main.create_worker(FakeRedisClient())
 
     assert created_queues == [DEFAULT_QUEUE_NAME]
+
+
+def test_resolve_worker_class_uses_windows_simple_worker_on_windows(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(worker_main.os, "name", "nt")
+
+    assert worker_main.resolve_worker_class() is worker_main.WindowsSimpleWorker
+    assert worker_main.WindowsSimpleWorker.death_penalty_class is TimerDeathPenalty
+
+
+def test_resolve_worker_class_uses_default_worker_on_non_windows(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(worker_main.os, "name", "posix")
+
+    assert worker_main.resolve_worker_class() is worker_main.Worker

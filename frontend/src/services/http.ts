@@ -34,8 +34,9 @@ export async function requestJson<T>(
 ): Promise<ApiEnvelope<T>> {
   const headers = new Headers(init?.headers ?? {})
   const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData
+  const method = init?.method?.toUpperCase() ?? "GET"
 
-  if (!isFormData && !headers.has("Content-Type")) {
+  if (!isFormData && method !== "GET" && method !== "HEAD" && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json")
   }
 

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import logging
 
@@ -7,7 +7,7 @@ from backend.app.services.chunking_service import DocumentChunkingService
 from backend.app.services.parser_service import DocumentParserService
 from backend.app.settings import get_backend_settings
 from backend.infrastructure.database import create_database_engine, create_session_factory
-from backend.infrastructure.llm import DashScopeEmbeddingClient
+from backend.infrastructure.llm import create_embedding_client
 from backend.infrastructure.observability import log_event
 
 
@@ -21,7 +21,7 @@ def enqueue_document_ingestion(document_id: str, task_id: str) -> dict[str, str 
     log_event(
         logger,
         logging.INFO,
-        "worker.document_task_started",
+        'worker.document_task_started',
         document_id=document_id,
         task_id=task_id,
     )
@@ -35,19 +35,16 @@ def enqueue_document_ingestion(document_id: str, task_id: str) -> dict[str, str 
                 chunk_size=settings.chunk_size,
                 chunk_overlap=settings.chunk_overlap,
             ),
-            embedding_client=DashScopeEmbeddingClient(
-                api_key=settings.dashscope_api_key,
-                model=settings.embedding_model,
-            ),
+            embedding_client=create_embedding_client(settings),
         )
         result = orchestrator.process(document_id=document_id, task_id=task_id)
         log_event(
             logger,
             logging.INFO,
-            "worker.document_task_finished",
+            'worker.document_task_finished',
             document_id=document_id,
             task_id=task_id,
-            status=result["status"],
+            status=result['status'],
         )
         return result
     finally:

@@ -61,18 +61,29 @@ def create_document_upload(
         )
     )
 
-    redis_client = create_redis_client(settings.redis_url)
-    queue = create_queue(redis_client, queue_name=DEFAULT_QUEUE_NAME)
-    enqueue_callable(
-        queue,
-        enqueue_document_ingestion,
-        document.id,
-        task.id,
-    )
-
     db_session.commit()
     db_session.refresh(document)
     db_session.refresh(task)
+
+    try:
+        redis_client = create_redis_client(settings.redis_url)
+        queue = create_queue(redis_client, queue_name=DEFAULT_QUEUE_NAME)
+        enqueue_callable(
+            queue,
+            enqueue_document_ingestion,
+            document.id,
+            task.id,
+        )
+    except Exception:
+        persisted_document = document_repository.get_by_id(document.id)
+        if persisted_document is not None:
+            db_session.delete(persisted_document)
+            db_session.commit()
+
+        if stored_file.storage_path.exists():
+            stored_file.storage_path.unlink()
+
+        raise
 
     log_event(
         logger,

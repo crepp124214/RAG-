@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import sqrt
 
-from sqlalchemy import select, text
+from sqlalchemy import Float, select, text
 from sqlalchemy.orm import Session
 
 from backend.app.models import Chunk
@@ -67,11 +67,12 @@ def _search_similar_chunks_postgresql(
     query_embedding: list[float],
     limit: int,
 ) -> list[ChunkSimilarityResult]:
-    score_expression = (1 - Chunk.embedding.cosine_distance(query_embedding)).label("score")
+    distance_expression = Chunk.embedding.op("<=>", return_type=Float)(query_embedding)
+    score_expression = (1.0 - distance_expression).label("score")
     statement = (
         select(Chunk, score_expression)
         .where(Chunk.embedding.is_not(None))
-        .order_by(Chunk.embedding.cosine_distance(query_embedding))
+        .order_by(distance_expression)
         .limit(limit)
     )
 

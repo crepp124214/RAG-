@@ -1,455 +1,521 @@
-# progress.md
+﻿# progress.md
 
-## 文档说明
+## 鏂囨。璇存槑
 
-本文件用于记录《implementation-plan.md》中各步骤的完成情况、验证结果和备注信息。
+鏈枃浠剁敤浜庤褰曘€奿mplementation-plan.md銆嬩腑鍚勬楠ょ殑瀹屾垚鎯呭喌銆侀獙璇佺粨鏋滃拰澶囨敞淇℃伅銆?
 
-使用规则：
+浣跨敤瑙勫垯锛?
 
-- 每完成一个已验证通过的实施步骤，必须更新本文件
-- 未完成或未验证通过的步骤，不得标记为完成
-- 如果步骤实现了但验证失败，必须明确记录失败原因
-- 如果计划发生调整，必须同时更新实施计划与本文件
-
----
-
-## 当前阶段
-
-- 当前阶段：第一阶段最小可运行产品
-- 当前目标：完成基础底座，不提前实现 Tool Calling、多模态、GraphRAG
+- 姣忓畬鎴愪竴涓凡楠岃瘉閫氳繃鐨勫疄鏂芥楠わ紝蹇呴』鏇存柊鏈枃浠?
+- 鏈畬鎴愭垨鏈獙璇侀€氳繃鐨勬楠わ紝涓嶅緱鏍囪涓哄畬鎴?
+- 濡傛灉姝ラ瀹炵幇浜嗕絾楠岃瘉澶辫触锛屽繀椤绘槑纭褰曞け璐ュ師鍥?
+- 濡傛灉璁″垝鍙戠敓璋冩暣锛屽繀椤诲悓鏃舵洿鏂板疄鏂借鍒掍笌鏈枃浠?
 
 ---
 
-## 进度总览
+## 褰撳墠闃舵
 
-- 总状态：进行中
-- 已完成步骤数：28
-- 当前进行步骤：无
-- 下一步建议：完成第一阶段集成验收
-
-## 最新补充：步骤 23-28
-
-- 步骤 23 已完成：前端文档上传流程已接入，支持上传、失败提示、任务状态恢复和刷新后继续追踪。
-- 步骤 24 已完成：前端文档管理页已落地，展示文档列表、文档详情、任务摘要并支持硬删除。
-- 步骤 25 已完成：前端聊天工作台已接入会话列表、消息历史、引用展示和新建会话能力。
-- 步骤 26 已完成：前端已通过 `fetch + SSE` 解析实现流式问答，支持中途失败、结束收敛和再次发问。
-- 步骤 27 已完成：前后端自动化测试已补齐并通过，当前主链路覆盖上传、文档管理、聊天、流式更新和后端核心服务。
-- 步骤 28 已完成：后端已补充结构化日志、请求标识透传和关键链路日志，可关联请求、文档、任务和会话。
-- 验证结果：`cmd /c npm run build`、`cmd /c npm run test:unit -- --run` 和 `python -m pytest backend/tests -p no:cacheprovider` 均通过；当前后端测试结果为 `87 passed`。
+- 褰撳墠闃舵锛氱涓€闃舵鏈€灏忓彲杩愯浜у搧
+- 褰撳墠鐩爣锛氬畬鎴愬熀纭€搴曞骇锛屼笉鎻愬墠瀹炵幇 Tool Calling銆佸妯℃€併€丟raphRAG
 
 ---
 
-## 状态说明
+## 杩涘害鎬昏
 
-- `未开始`：尚未进入实施
-- `进行中`：正在实施，尚未完成全部验证
-- `已完成`：实现完成且验证通过
-- `已阻塞`：存在外部依赖或关键问题，暂时无法推进
-- `已跳过`：明确决定本阶段不做，并记录原因
+- 鎬荤姸鎬侊細杩涜涓?
+- 宸插畬鎴愭楠ゆ暟锛?8
+- 褰撳墠杩涜姝ラ锛氭棤
+- 涓嬩竴姝ュ缓璁細瀹屾垚绗竴闃舵闆嗘垚楠屾敹
 
----
+## 鏈€鏂拌ˉ鍏咃細姝ラ 23-28
 
-## 步骤记录模板
-
-后续新增记录时，按下面格式填写：
-
-### 步骤 X：步骤名称
-
-- 状态：
-- 完成时间：
-- 对应计划：
-- 实现内容：
-- 验证结果：
-- 备注：
+- 姝ラ 23 宸插畬鎴愶細鍓嶇鏂囨。涓婁紶娴佺▼宸叉帴鍏ワ紝鏀寔涓婁紶銆佸け璐ユ彁绀恒€佷换鍔＄姸鎬佹仮澶嶅拰鍒锋柊鍚庣户缁拷韪€?
+- 姝ラ 24 宸插畬鎴愶細鍓嶇鏂囨。绠＄悊椤靛凡钀藉湴锛屽睍绀烘枃妗ｅ垪琛ㄣ€佹枃妗ｈ鎯呫€佷换鍔℃憳瑕佸苟鏀寔纭垹闄ゃ€?
+- 姝ラ 25 宸插畬鎴愶細鍓嶇鑱婂ぉ宸ヤ綔鍙板凡鎺ュ叆浼氳瘽鍒楄〃銆佹秷鎭巻鍙层€佸紩鐢ㄥ睍绀哄拰鏂板缓浼氳瘽鑳藉姏銆?
+- 姝ラ 26 宸插畬鎴愶細鍓嶇宸查€氳繃 `fetch + SSE` 瑙ｆ瀽瀹炵幇娴佸紡闂瓟锛屾敮鎸佷腑閫斿け璐ャ€佺粨鏉熸敹鏁涘拰鍐嶆鍙戦棶銆?
+- 姝ラ 27 宸插畬鎴愶細鍓嶅悗绔嚜鍔ㄥ寲娴嬭瘯宸茶ˉ榻愬苟閫氳繃锛屽綋鍓嶄富閾捐矾瑕嗙洊涓婁紶銆佹枃妗ｇ鐞嗐€佽亰澶┿€佹祦寮忔洿鏂板拰鍚庣鏍稿績鏈嶅姟銆?
+- 姝ラ 28 宸插畬鎴愶細鍚庣宸茶ˉ鍏呯粨鏋勫寲鏃ュ織銆佽姹傛爣璇嗛€忎紶鍜屽叧閿摼璺棩蹇楋紝鍙叧鑱旇姹傘€佹枃妗ｃ€佷换鍔″拰浼氳瘽銆?
+- 楠岃瘉缁撴灉锛歚cmd /c npm run build`銆乣cmd /c npm run test:unit -- --run` 鍜?`python -m pytest backend/tests -p no:cacheprovider` 鍧囬€氳繃锛涘綋鍓嶅悗绔祴璇曠粨鏋滀负 `87 passed`銆?
 
 ---
 
-## 当前实施计划步骤清单
+## 鐘舵€佽鏄?
 
-### 步骤 1：确认第一阶段范围与冻结边界
-
-- 状态：已完成
-- 完成时间：2026-04-03
-- 对应计划：`implementation-plan.md`
-- 实现内容：冻结了第一阶段范围与禁止项；在 `implementation-plan.md` 中补充了“第一阶段冻结口径”和“第一阶段关键默认值”；在 `tech-stack.md` 中补充了“第一阶段冻结实现口径”；明确了单用户、无登录、无鉴权、无 `users` 表、`SQLAlchemy + Alembic`、重复上传提示已存在、硬删除、一文档多任务、会话标题自动截断、测试工具链、分块默认值、检索默认值、SSE 第一阶段事件集合以及旧 `core/` 的迁移策略。
-- 验证结果：已由用户人工验证并确认通过；当前第一阶段范围、默认实现口径和禁止项在 `memory-bank` 内已形成统一口径；后续开发者无需再为高影响决策做二次选型。
-- 备注：按用户要求，`game-design-document.md` 保持总体设计方案定位，不承载第一阶段冻结细节；第一阶段冻结事实来源以 `implementation-plan.md` 和 `tech-stack.md` 为准；在用户确认验证通过前，未开始第 2 步，也未提前记录完成状态。
-
-### 步骤 2：建立新目录骨架
-
-- 状态：已完成
-- 完成时间：2026-04-03
-- 对应计划：`implementation-plan.md`
-- 实现内容：创建了 `frontend/`、`backend/`、`worker/` 三段式目录；在 `backend/` 下创建了 `api`、`app`、`infrastructure`、`tests` 四层结构；在 `api/` 下创建了 `routes`、`schemas`、`deps`；在 `app/` 下创建了 `orchestrators`、`services`、`repositories`、`tasks`、`models`、`settings`；在 `infrastructure/` 下创建了 `llm`、`database`、`vector`、`storage`、`queue`、`observability`；使用 `.gitkeep` 固定空目录结构以便版本控制。
-- 验证结果：已由用户人工验证并确认通过；新目录层级与实施计划一致；旧 `app.py` 与 `core/` 均保留，未被误删或改造；本轮未进入第 3 步，也未提前创建配置实现、FastAPI 应用或前端工程内容。
-- 备注：当前仅完成结构骨架，不代表具体业务模块已实现；后续开发必须继续遵循“旧 `core/` 作为迁移参考，新能力优先落到新架构目录”的约束。
-
-### 步骤 3：建立统一配置体系
-
-- 状态：已完成
-- 完成时间：2026-04-03
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增了根目录 [`.env.example`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\.env.example)、[`backend/.env.example`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\backend\.env.example) 和 [`frontend/.env.example`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\frontend\.env.example) 作为第一阶段统一配置示例；新增了后端统一配置入口 [`backend/app/settings/config.py`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\backend\app\settings\config.py) 和导出文件 [`backend/app/settings/__init__.py`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\backend\app\settings\__init__.py)；新增了前端 API 地址读取入口 [`frontend/src/config/env.ts`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\frontend\src\config\env.ts)；新增了配置加载测试 [`backend/tests/test_config.py`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\backend\tests\test_config.py)；同步更新了 [`README.md`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\README.md) 的配置说明。
-- 验证结果：已由用户人工验证并确认通过；本地执行 `python -m pytest backend/tests/test_config.py -p no:cacheprovider` 通过，验证了“完整配置可加载、缺少关键配置时报错、分块参数关系校验生效”三类行为。
-- 备注：本轮只完成统一配置体系，没有提前进入 FastAPI 应用初始化；后端配置当前依赖 `python-dotenv` 读取 `.env` 文件，旧 `core/` 中分散读取环境变量的方式后续将逐步迁移到统一配置入口。
-
-### 步骤 4：搭建 FastAPI 基础应用
-
-- 状态：已完成
-- 完成时间：2026-04-03
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增了应用入口 [`backend/main.py`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\backend\main.py)，实现了 `create_app` 工厂、`lifespan` 配置加载和 `/api` 路由挂载；新增了统一异常定义 [`backend/app/exceptions.py`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\backend\app\exceptions.py)、统一响应结构 [`backend/api/schemas/response.py`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\backend\api\schemas\response.py) 和异常处理注册 [`backend/api/error_handlers.py`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\backend\api\error_handlers.py)；新增了健康检查路由 [`backend/api/routes/system.py`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\backend\api\routes\system.py)、路由聚合 [`backend/api/router.py`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\backend\api\router.py) 和文档/任务/聊天预留路由模块；新增了接口测试 [`backend/tests/test_app.py`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\backend\tests\test_app.py)；同步补充了 [`requirements.txt`](C:\Users\qwer\.codex\worktrees\e514\RAG智能文档检索助手\requirements.txt) 中的 FastAPI、Pydantic、Uvicorn 依赖声明。
-- 验证结果：已由用户人工验证并确认通过；本地执行 `python -m pytest backend/tests/test_config.py backend/tests/test_app.py -p no:cacheprovider` 通过，验证了健康检查接口、404 标准错误响应、`/docs` 文档页可用、业务异常与未处理异常统一转换这四类行为。
-- 备注：本轮只完成 FastAPI 基础应用骨架，不包含数据库接入、业务路由实现和前端工程初始化；为避免导入期直接失败，运行时配置加载放到了 `lifespan` 阶段。
-
-### 步骤 5：搭建 Vue 3 基础前端
-
-- 状态：已完成
-- 完成时间：2026-04-03
-- 对应计划：`implementation-plan.md`
-- 实现内容：初始化了 `Vue 3 + Vite + Element Plus + Pinia` 前端工程；新增了 [`frontend/package.json`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\package.json)、[`frontend/index.html`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\index.html)、[`frontend/tsconfig.json`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\tsconfig.json)、[`frontend/vite.config.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\vite.config.ts) 和 [`frontend/package-lock.json`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\package-lock.json)；新增了应用入口 [`frontend/src/main.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\src\main.ts)、页面骨架 [`frontend/src/App.vue`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\src\App.vue) 和类型声明 [`frontend/src/vite-env.d.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\src\vite-env.d.ts)；新增了统一请求层 [`frontend/src/services/http.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\src\services\http.ts)、健康检查服务 [`frontend/src/services/system.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\src\services\system.ts) 和系统状态仓库 [`frontend/src/stores/system.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\src\stores\system.ts)；工作台页面已预留会话列表、聊天区、文档管理区和任务状态区，并接入后端 `/api/health` 显示加载中、成功和失败提示；新增了前端测试 [`frontend/src/tests/api.spec.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\src\tests\api.spec.ts)、[`frontend/src/tests/setup.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\src\tests\setup.ts) 和 [`frontend/src/__tests__/App.spec.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\frontend\src\__tests__\App.spec.ts)；同时更新了 [`.gitignore`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\.gitignore) 以忽略前端依赖和构建产物。
-- 验证结果：已由用户人工验证并确认通过；在当前工作区补装前端依赖后，本地执行 `cmd /c npm run build`、`cmd /c npm run test:unit -- --run` 和 `python -m pytest backend/tests/test_app.py -p no:cacheprovider` 均通过；验证了前端工程可构建、单元测试通过、基础工作台可渲染，且与后端健康检查接口联通正常。
-- 备注：本步初次验证失败的根因不是前端代码逻辑错误，而是当前工作区尚未执行 `frontend` 目录的 `npm install`，导致 `vite` 和 `vitest` 命令不可用；补装依赖后重新验证通过。本步只完成前端工程骨架、基础布局、健康检查联通和统一请求封装，未进入文档上传、会话接口、真实聊天链路或数据库接入。
-
-### 步骤 6：接入 PostgreSQL
-
-- 状态：已完成
-- 完成时间：2026-04-03
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增了 SQLAlchemy 数据模型基座 [`backend/app/models/base.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\app\models\base.py) 以及第一阶段最小业务模型 [`document.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\app\models\document.py)、[`task.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\app\models\task.py)、[`session.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\app\models\session.py)、[`message.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\app\models\message.py)、[`chunk.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\app\models\chunk.py)；新增了数据库基础设施 [`backend/infrastructure/database/connection.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\infrastructure\database\connection.py)、[`session.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\infrastructure\database\session.py)、[`initializer.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\infrastructure\database\initializer.py)；新增了 Alembic 骨架和首个迁移 [`alembic.ini`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\alembic.ini)、[`backend/infrastructure/database/migrations/env.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\infrastructure\database\migrations\env.py)、[`backend/infrastructure/database/migrations/versions/20260403_000001_create_phase_one_tables.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\infrastructure\database\migrations\versions\20260403_000001_create_phase_one_tables.py)；更新了 [`backend/main.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\main.py) 以在应用启动期建立数据库引擎、校验连接并挂载会话工厂；更新了 [`requirements.txt`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\requirements.txt) 并新增数据库测试 [`backend/tests/test_database.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\tests\test_database.py)。
-- 验证结果：已由用户人工验证并确认通过；本地执行 `python -m pytest backend/tests/test_database.py backend/tests/test_app.py backend/tests/test_config.py -p no:cacheprovider` 通过，验证了数据库连接检查、首批表创建、最小模型插入与查询、Alembic 骨架存在以及 FastAPI 启动期数据库初始化链路。
-- 备注：本步只完成 PostgreSQL 接入底座与关系型表结构，不包含 `pgvector` 字段、向量索引或检索逻辑；测试中使用工作区内的 SQLite 临时数据库文件替代系统临时目录，以规避当前 Windows 环境下 `pytest` 默认临时目录权限问题；生产目标数据库仍然是 PostgreSQL。
-
-### 步骤 7：接入 pgvector
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：为 [`backend/app/models/chunk.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\app\models\chunk.py) 新增了 `embedding` 向量字段；新增了向量类型与最小存取模块 [`backend/infrastructure/vector/types.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\infrastructure\vector\types.py)、[`backend/infrastructure/vector/store.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\infrastructure\vector\store.py) 和 [`backend/infrastructure/vector/__init__.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\infrastructure\vector\__init__.py)；新增了第 7 步迁移脚本 [`backend/infrastructure/database/migrations/versions/20260403_000002_add_chunk_embedding.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\infrastructure\database\migrations\versions\20260403_000002_add_chunk_embedding.py)；更新了 [`backend/infrastructure/database/initializer.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\infrastructure\database\initializer.py) 以在 PostgreSQL 环境准备 `vector` 扩展；更新了 [`requirements.txt`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\requirements.txt) 并新增/扩展了 [`backend/tests/test_vector.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\tests\test_vector.py) 和 [`backend/tests/test_database.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG智能文档检索助手\backend\tests\test_database.py)。
-- 验证结果：已由用户人工验证并确认通过；本地执行 `python -m pytest backend/tests/test_database.py backend/tests/test_vector.py backend/tests/test_app.py backend/tests/test_config.py -p no:cacheprovider` 通过，验证了向量字段已落到分块模型、最小向量写入与相似度查询可用、空数据集查询返回空结果，以及现有 FastAPI 与配置测试未回归。
-- 备注：本步严格限制在 `pgvector` 接入底座，只完成向量列、最小存取和相似度查询，不包含向量化服务、Embedding 调用、重排逻辑或正式检索编排；PostgreSQL 路径使用 `pgvector`，SQLite 仅作为测试回退到 JSON 存储，避免本地自动化测试被数据库扩展依赖阻塞。
-
-### 步骤 8：接入 Redis 与 RQ
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已完成 Redis 连接、RQ 队列封装、Worker 入口、任务入队与任务状态查询链路，为后续文档异步入库提供正式基础设施。
-- 验证结果：后端自动化测试已覆盖最小任务执行、成功任务状态和失败任务状态。
-- 备注：第一阶段异步能力固定为 `RQ + Redis`，未引入 Celery 或其他队列系统。
-
-### 步骤 9：建立文件存储规则与文档元数据模型
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已建立上传文件落盘规则、文档记录与任务记录创建流程，并限制在第一阶段最小元数据范围内。
-- 验证结果：后端自动化测试已覆盖磁盘落盘、文档记录、任务记录、非法文件和空文件。
-- 备注：重复上传采用“提示已存在，不重复入库”策略。
-
-### 步骤 10：实现文档上传接口
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已落地 `POST /api/documents/upload`，支持 PDF、DOCX、TXT，返回 `document_id` 与 `task_id`，并将耗时处理交给后台队列。
-- 验证结果：后端自动化测试已覆盖合法上传、非法类型上传和重复上传场景。
-- 备注：上传请求线程只负责保存和入队，不同步做解析与入库。
-
-### 步骤 11：实现文档状态与任务状态接口
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已落地文档详情接口和任务详情接口，返回与后台任务一致的状态、失败原因和最小必要元数据。
-- 验证结果：后端自动化测试已覆盖处理中、完成、失败三类状态读取。
-- 备注：前端刷新恢复能力依赖这两个接口，因此它们已成为文档域的正式查询事实来源。
-
-### 步骤 12：迁移旧解析逻辑到新服务层
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已从旧 `core/` 中复用文本解析能力，并通过新服务层包一层统一输出结构。
-- 验证结果：后端自动化测试已覆盖 TXT、PDF、DOCX 成功解析和损坏文档失败路径。
-- 备注：本步只迁移文本链路，没有引入多模态解析。
-
-### 步骤 13：实现文本分块服务
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已实现段落优先的统一分块策略，默认 `chunk_size=800`、`chunk_overlap=150`，并保留 `document_id`、`page_number`、`chunk_index`、`source_type` 等元数据。
-- 验证结果：后端自动化测试已覆盖稳定分块、短文档分块和空文本保护。
-- 备注：分块策略已冻结为第一阶段默认值，后续调整应同步更新配置和测试。
-
-### 步骤 14：实现向量化与入库服务
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已接入 DashScope Embedding，将分块文本、元数据和向量写入 PostgreSQL + pgvector。
-- 验证结果：后端自动化测试已覆盖向量入库成功和 Embedding 失败转 `FAILED`。
-- 备注：本步只做向量化与入库，不扩展到工具调用或多模态向量化。
-
-### 步骤 15：串联完整异步入库流水线
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已用 RQ 串联解析、分块、向量化、状态更新和失败回写，形成完整异步入库流水线。
-- 验证结果：后端自动化测试已覆盖成功链路、阶段状态推进和中途失败停止后续处理。
-- 备注：文档任务状态严格遵守 `UPLOADED -> PARSING -> CHUNKING -> EMBEDDING -> READY/FAILED`。
-
-### 步骤 16：实现文档删除接口
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已实现文档硬删除，删除文档元数据、关联分块和原始文件。
-- 验证结果：后端自动化测试已覆盖已存在文档删除和不存在文档报错。
-- 备注：第一阶段采用硬删除，没有引入软删除字段。
-
-### 步骤 17：实现基础检索服务
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已实现基于 pgvector 的召回、`top_k=12` 候选检索和 `BGE Reranker` 的 `top_n=5` 重排，并输出引用所需字段。
-- 验证结果：后端自动化测试已覆盖命中、空命中和重排链路。
-- 备注：当前检索仍然严格限制在第一阶段知识库内，不接图谱或外部搜索。
-
-### 步骤 18：实现基础问答编排服务
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已实现问题输入、检索、上下文拼接、Qwen 调用和答案生成的基础问答编排服务。
-- 验证结果：后端自动化测试已覆盖知识库命中回答、空命中保守回复和模型失败路径。
-- 备注：第一阶段不启用 Tool Calling，未命中时宁可少答也不强答。
-
-### 步骤 19：实现会话创建与消息持久化
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已实现会话创建、首轮问题自动生成标题和问答消息持久化。
-- 验证结果：后端自动化测试已覆盖标题生成、消息落库和失败回滚。
-- 备注：异常时不会留下半条助手消息。
-
-### 步骤 20：实现会话列表与消息列表接口
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已实现会话列表和消息列表接口，按最近活跃排序并返回第一阶段最小必要字段。
-- 验证结果：后端自动化测试已覆盖空列表、多会话排序和不存在会话错误。
-- 备注：列表接口不做复杂筛选。
-
-### 步骤 21：实现同步聊天接口
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已实现 `POST /api/chat/query`，联动知识库问答、消息持久化和引用返回。
-- 验证结果：后端自动化测试已覆盖正常问答、空问题和非法会话。
-- 备注：同步接口和流式接口共用同一套聊天域服务。
-
-### 步骤 22：实现 SSE 流式聊天接口
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已实现 `POST /api/chat/stream`，固定输出 `message_start`、`citation`、`token`、`message_end`、`error` 五类事件。
-- 验证结果：后端自动化测试已覆盖流式成功、异常中断和流式结束后完整消息持久化。
-- 备注：为遵守第一阶段边界，本步不引入 WebSocket。
-
-### 步骤 23：实现前端文档上传流程
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：前端已接入文档上传、失败提示、任务状态恢复和刷新后继续追踪；通过本地持久化记录 `document_id/task_id` 恢复已跟踪文档。
-- 验证结果：前端构建和单元测试通过；上传成功、失败和刷新恢复链路已验证。
-- 备注：为遵守既定接口边界，前端没有擅自新增 `GET /api/documents`。
-
-### 步骤 24：实现前端文档管理页
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已完成文档列表、文档详情、任务摘要和删除操作。
-- 验证结果：前端构建和单元测试通过；文档查看与删除行为已验证。
-- 备注：删除后会同步清理本地已跟踪文档记录。
-
-### 步骤 25：实现前端聊天工作台
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已完成会话列表、消息区、输入区、引用展示和新建会话。
-- 验证结果：前端构建和单元测试通过；会话切换、历史消息加载和引用展示行为已验证。
-- 备注：聊天域状态统一由 `chat` 仓库管理。
-
-### 步骤 26：实现前端流式问答体验
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：已完成基于 `fetch + SSE` 的流式问答解析，支持 token 逐步渲染、引用事件展示、结束收敛和错误中断处理。
-- 验证结果：前端构建和单元测试通过；正常流式、异常中断和再次发问场景已验证。
-- 备注：浏览器原生 `EventSource` 不支持 `POST`，因此当前前端采用手动解析 SSE 数据帧。
-
-### 步骤 27：建立基础自动化测试
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：补齐了前端上传、文档管理、聊天服务、聊天状态和主应用渲染测试；后端继续维持上传、任务状态、检索问答、会话消息和日志链路测试。
-- 验证结果：`cmd /c npm run test:unit -- --run` 和 `python -m pytest backend/tests -p no:cacheprovider` 通过；当前后端测试结果为 `87 passed`。
-- 备注：后续新增功能应在此基础上补测，而不是绕过自动化验证继续推进。
-
-### 步骤 28：建立基础日志与可观测性
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增结构化日志模块、请求标识中间件和关键链路日志埋点；上传、异步入库、聊天和 Worker 链路现在都能关联 `request_id`、`document_id`、`task_id`、`session_id` 等标识。
-- 验证结果：`python -m pytest backend/tests -p no:cacheprovider` 通过，新增日志测试覆盖请求标识透传和日志字段存在性。
-- 备注：第一阶段没有引入外部监控平台，日志是当前唯一正式可观测性来源。
-
-### 步骤 29：完成第一阶段集成验收
-
-- 状态：未开始
-- 完成时间：
-- 对应计划：`implementation-plan.md`
-- 实现内容：
-- 验证结果：
-- 备注：
+- `鏈紑濮媊锛氬皻鏈繘鍏ュ疄鏂?
+- `杩涜涓璥锛氭鍦ㄥ疄鏂斤紝灏氭湭瀹屾垚鍏ㄩ儴楠岃瘉
+- `宸插畬鎴恅锛氬疄鐜板畬鎴愪笖楠岃瘉閫氳繃
+- `宸查樆濉瀈锛氬瓨鍦ㄥ閮ㄤ緷璧栨垨鍏抽敭闂锛屾殏鏃舵棤娉曟帹杩?
+- `宸茶烦杩嘸锛氭槑纭喅瀹氭湰闃舵涓嶅仛锛屽苟璁板綍鍘熷洜
 
 ---
 
-## 更新记录
+## 姝ラ璁板綍妯℃澘
+
+鍚庣画鏂板璁板綍鏃讹紝鎸変笅闈㈡牸寮忓～鍐欙細
+
+### 姝ラ X锛氭楠ゅ悕绉?
+
+- 鐘舵€侊細
+- 瀹屾垚鏃堕棿锛?
+- 瀵瑰簲璁″垝锛?
+- 瀹炵幇鍐呭锛?
+- 楠岃瘉缁撴灉锛?
+- 澶囨敞锛?
+
+---
+
+## 褰撳墠瀹炴柦璁″垝姝ラ娓呭崟
+
+### 姝ラ 1锛氱‘璁ょ涓€闃舵鑼冨洿涓庡喕缁撹竟鐣?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-03
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬喕缁撲簡绗竴闃舵鑼冨洿涓庣姝㈤」锛涘湪 `implementation-plan.md` 涓ˉ鍏呬簡鈥滅涓€闃舵鍐荤粨鍙ｅ緞鈥濆拰鈥滅涓€闃舵鍏抽敭榛樿鍊尖€濓紱鍦?`tech-stack.md` 涓ˉ鍏呬簡鈥滅涓€闃舵鍐荤粨瀹炵幇鍙ｅ緞鈥濓紱鏄庣‘浜嗗崟鐢ㄦ埛銆佹棤鐧诲綍銆佹棤閴存潈銆佹棤 `users` 琛ㄣ€乣SQLAlchemy + Alembic`銆侀噸澶嶄笂浼犳彁绀哄凡瀛樺湪銆佺‖鍒犻櫎銆佷竴鏂囨。澶氫换鍔°€佷細璇濇爣棰樿嚜鍔ㄦ埅鏂€佹祴璇曞伐鍏烽摼銆佸垎鍧楅粯璁ゅ€笺€佹绱㈤粯璁ゅ€笺€丼SE 绗竴闃舵浜嬩欢闆嗗悎浠ュ強鏃?`core/` 鐨勮縼绉荤瓥鐣ャ€?
+- 楠岃瘉缁撴灉锛氬凡鐢辩敤鎴蜂汉宸ラ獙璇佸苟纭閫氳繃锛涘綋鍓嶇涓€闃舵鑼冨洿銆侀粯璁ゅ疄鐜板彛寰勫拰绂佹椤瑰湪 `memory-bank` 鍐呭凡褰㈡垚缁熶竴鍙ｅ緞锛涘悗缁紑鍙戣€呮棤闇€鍐嶄负楂樺奖鍝嶅喅绛栧仛浜屾閫夊瀷銆?
+- 澶囨敞锛氭寜鐢ㄦ埛瑕佹眰锛宍game-design-document.md` 淇濇寔鎬讳綋璁捐鏂规瀹氫綅锛屼笉鎵胯浇绗竴闃舵鍐荤粨缁嗚妭锛涚涓€闃舵鍐荤粨浜嬪疄鏉ユ簮浠?`implementation-plan.md` 鍜?`tech-stack.md` 涓哄噯锛涘湪鐢ㄦ埛纭楠岃瘉閫氳繃鍓嶏紝鏈紑濮嬬 2 姝ワ紝涔熸湭鎻愬墠璁板綍瀹屾垚鐘舵€併€?
+
+### 姝ラ 2锛氬缓绔嬫柊鐩綍楠ㄦ灦
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-03
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬垱寤轰簡 `frontend/`銆乣backend/`銆乣worker/` 涓夋寮忕洰褰曪紱鍦?`backend/` 涓嬪垱寤轰簡 `api`銆乣app`銆乣infrastructure`銆乣tests` 鍥涘眰缁撴瀯锛涘湪 `api/` 涓嬪垱寤轰簡 `routes`銆乣schemas`銆乣deps`锛涘湪 `app/` 涓嬪垱寤轰簡 `orchestrators`銆乣services`銆乣repositories`銆乣tasks`銆乣models`銆乣settings`锛涘湪 `infrastructure/` 涓嬪垱寤轰簡 `llm`銆乣database`銆乣vector`銆乣storage`銆乣queue`銆乣observability`锛涗娇鐢?`.gitkeep` 鍥哄畾绌虹洰褰曠粨鏋勪互渚跨増鏈帶鍒躲€?
+- 楠岃瘉缁撴灉锛氬凡鐢辩敤鎴蜂汉宸ラ獙璇佸苟纭閫氳繃锛涙柊鐩綍灞傜骇涓庡疄鏂借鍒掍竴鑷达紱鏃?`app.py` 涓?`core/` 鍧囦繚鐣欙紝鏈璇垹鎴栨敼閫狅紱鏈疆鏈繘鍏ョ 3 姝ワ紝涔熸湭鎻愬墠鍒涘缓閰嶇疆瀹炵幇銆丗astAPI 搴旂敤鎴栧墠绔伐绋嬪唴瀹广€?
+- 澶囨敞锛氬綋鍓嶄粎瀹屾垚缁撴瀯楠ㄦ灦锛屼笉浠ｈ〃鍏蜂綋涓氬姟妯″潡宸插疄鐜帮紱鍚庣画寮€鍙戝繀椤荤户缁伒寰€滄棫 `core/` 浣滀负杩佺Щ鍙傝€冿紝鏂拌兘鍔涗紭鍏堣惤鍒版柊鏋舵瀯鐩綍鈥濈殑绾︽潫銆?
+
+### 姝ラ 3锛氬缓绔嬬粺涓€閰嶇疆浣撶郴
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-03
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧炰簡鏍圭洰褰?[`.env.example`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆.env.example)銆乕`backend/.env.example`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\.env.example) 鍜?[`frontend/.env.example`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\.env.example) 浣滀负绗竴闃舵缁熶竴閰嶇疆绀轰緥锛涙柊澧炰簡鍚庣缁熶竴閰嶇疆鍏ュ彛 [`backend/app/settings/config.py`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\app\settings\config.py) 鍜屽鍑烘枃浠?[`backend/app/settings/__init__.py`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\app\settings\__init__.py)锛涙柊澧炰簡鍓嶇 API 鍦板潃璇诲彇鍏ュ彛 [`frontend/src/config/env.ts`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\src\config\env.ts)锛涙柊澧炰簡閰嶇疆鍔犺浇娴嬭瘯 [`backend/tests/test_config.py`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\tests\test_config.py)锛涘悓姝ユ洿鏂颁簡 [`README.md`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆README.md) 鐨勯厤缃鏄庛€?
+- 楠岃瘉缁撴灉锛氬凡鐢辩敤鎴蜂汉宸ラ獙璇佸苟纭閫氳繃锛涙湰鍦版墽琛?`python -m pytest backend/tests/test_config.py -p no:cacheprovider` 閫氳繃锛岄獙璇佷簡鈥滃畬鏁撮厤缃彲鍔犺浇銆佺己灏戝叧閿厤缃椂鎶ラ敊銆佸垎鍧楀弬鏁板叧绯绘牎楠岀敓鏁堚€濅笁绫昏涓恒€?
+- 澶囨敞锛氭湰杞彧瀹屾垚缁熶竴閰嶇疆浣撶郴锛屾病鏈夋彁鍓嶈繘鍏?FastAPI 搴旂敤鍒濆鍖栵紱鍚庣閰嶇疆褰撳墠渚濊禆 `python-dotenv` 璇诲彇 `.env` 鏂囦欢锛屾棫 `core/` 涓垎鏁ｈ鍙栫幆澧冨彉閲忕殑鏂瑰紡鍚庣画灏嗛€愭杩佺Щ鍒扮粺涓€閰嶇疆鍏ュ彛銆?
+
+### 姝ラ 4锛氭惌寤?FastAPI 鍩虹搴旂敤
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-03
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧炰簡搴旂敤鍏ュ彛 [`backend/main.py`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\main.py)锛屽疄鐜颁簡 `create_app` 宸ュ巶銆乣lifespan` 閰嶇疆鍔犺浇鍜?`/api` 璺敱鎸傝浇锛涙柊澧炰簡缁熶竴寮傚父瀹氫箟 [`backend/app/exceptions.py`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\app\exceptions.py)銆佺粺涓€鍝嶅簲缁撴瀯 [`backend/api/schemas/response.py`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\api\schemas\response.py) 鍜屽紓甯稿鐞嗘敞鍐?[`backend/api/error_handlers.py`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\api\error_handlers.py)锛涙柊澧炰簡鍋ュ悍妫€鏌ヨ矾鐢?[`backend/api/routes/system.py`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\api\routes\system.py)銆佽矾鐢辫仛鍚?[`backend/api/router.py`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\api\router.py) 鍜屾枃妗?浠诲姟/鑱婂ぉ棰勭暀璺敱妯″潡锛涙柊澧炰簡鎺ュ彛娴嬭瘯 [`backend/tests/test_app.py`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\tests\test_app.py)锛涘悓姝ヨˉ鍏呬簡 [`requirements.txt`](C:\Users\qwer\.codex\worktrees\e514\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆requirements.txt) 涓殑 FastAPI銆丳ydantic銆乁vicorn 渚濊禆澹版槑銆?
+- 楠岃瘉缁撴灉锛氬凡鐢辩敤鎴蜂汉宸ラ獙璇佸苟纭閫氳繃锛涙湰鍦版墽琛?`python -m pytest backend/tests/test_config.py backend/tests/test_app.py -p no:cacheprovider` 閫氳繃锛岄獙璇佷簡鍋ュ悍妫€鏌ユ帴鍙ｃ€?04 鏍囧噯閿欒鍝嶅簲銆乣/docs` 鏂囨。椤靛彲鐢ㄣ€佷笟鍔″紓甯镐笌鏈鐞嗗紓甯哥粺涓€杞崲杩欏洓绫昏涓恒€?
+- 澶囨敞锛氭湰杞彧瀹屾垚 FastAPI 鍩虹搴旂敤楠ㄦ灦锛屼笉鍖呭惈鏁版嵁搴撴帴鍏ャ€佷笟鍔¤矾鐢卞疄鐜板拰鍓嶇宸ョ▼鍒濆鍖栵紱涓洪伩鍏嶅鍏ユ湡鐩存帴澶辫触锛岃繍琛屾椂閰嶇疆鍔犺浇鏀惧埌浜?`lifespan` 闃舵銆?
+
+### 姝ラ 5锛氭惌寤?Vue 3 鍩虹鍓嶇
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-03
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬垵濮嬪寲浜?`Vue 3 + Vite + Element Plus + Pinia` 鍓嶇宸ョ▼锛涙柊澧炰簡 [`frontend/package.json`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\package.json)銆乕`frontend/index.html`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\index.html)銆乕`frontend/tsconfig.json`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\tsconfig.json)銆乕`frontend/vite.config.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\vite.config.ts) 鍜?[`frontend/package-lock.json`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\package-lock.json)锛涙柊澧炰簡搴旂敤鍏ュ彛 [`frontend/src/main.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\src\main.ts)銆侀〉闈㈤鏋?[`frontend/src/App.vue`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\src\App.vue) 鍜岀被鍨嬪０鏄?[`frontend/src/vite-env.d.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\src\vite-env.d.ts)锛涙柊澧炰簡缁熶竴璇锋眰灞?[`frontend/src/services/http.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\src\services\http.ts)銆佸仴搴锋鏌ユ湇鍔?[`frontend/src/services/system.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\src\services\system.ts) 鍜岀郴缁熺姸鎬佷粨搴?[`frontend/src/stores/system.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\src\stores\system.ts)锛涘伐浣滃彴椤甸潰宸查鐣欎細璇濆垪琛ㄣ€佽亰澶╁尯銆佹枃妗ｇ鐞嗗尯鍜屼换鍔＄姸鎬佸尯锛屽苟鎺ュ叆鍚庣 `/api/health` 鏄剧ず鍔犺浇涓€佹垚鍔熷拰澶辫触鎻愮ず锛涙柊澧炰簡鍓嶇娴嬭瘯 [`frontend/src/tests/api.spec.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\src\tests\api.spec.ts)銆乕`frontend/src/tests/setup.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\src\tests\setup.ts) 鍜?[`frontend/src/__tests__/App.spec.ts`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆frontend\src\__tests__\App.spec.ts)锛涘悓鏃舵洿鏂颁簡 [`.gitignore`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆.gitignore) 浠ュ拷鐣ュ墠绔緷璧栧拰鏋勫缓浜х墿銆?
+- 楠岃瘉缁撴灉锛氬凡鐢辩敤鎴蜂汉宸ラ獙璇佸苟纭閫氳繃锛涘湪褰撳墠宸ヤ綔鍖鸿ˉ瑁呭墠绔緷璧栧悗锛屾湰鍦版墽琛?`cmd /c npm run build`銆乣cmd /c npm run test:unit -- --run` 鍜?`python -m pytest backend/tests/test_app.py -p no:cacheprovider` 鍧囬€氳繃锛涢獙璇佷簡鍓嶇宸ョ▼鍙瀯寤恒€佸崟鍏冩祴璇曢€氳繃銆佸熀纭€宸ヤ綔鍙板彲娓叉煋锛屼笖涓庡悗绔仴搴锋鏌ユ帴鍙ｈ仈閫氭甯搞€?
+- 澶囨敞锛氭湰姝ュ垵娆￠獙璇佸け璐ョ殑鏍瑰洜涓嶆槸鍓嶇浠ｇ爜閫昏緫閿欒锛岃€屾槸褰撳墠宸ヤ綔鍖哄皻鏈墽琛?`frontend` 鐩綍鐨?`npm install`锛屽鑷?`vite` 鍜?`vitest` 鍛戒护涓嶅彲鐢紱琛ヨ渚濊禆鍚庨噸鏂伴獙璇侀€氳繃銆傛湰姝ュ彧瀹屾垚鍓嶇宸ョ▼楠ㄦ灦銆佸熀纭€甯冨眬銆佸仴搴锋鏌ヨ仈閫氬拰缁熶竴璇锋眰灏佽锛屾湭杩涘叆鏂囨。涓婁紶銆佷細璇濇帴鍙ｃ€佺湡瀹炶亰澶╅摼璺垨鏁版嵁搴撴帴鍏ャ€?
+
+### 姝ラ 6锛氭帴鍏?PostgreSQL
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-03
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧炰簡 SQLAlchemy 鏁版嵁妯″瀷鍩哄骇 [`backend/app/models/base.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\app\models\base.py) 浠ュ強绗竴闃舵鏈€灏忎笟鍔℃ā鍨?[`document.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\app\models\document.py)銆乕`task.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\app\models\task.py)銆乕`session.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\app\models\session.py)銆乕`message.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\app\models\message.py)銆乕`chunk.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\app\models\chunk.py)锛涙柊澧炰簡鏁版嵁搴撳熀纭€璁炬柦 [`backend/infrastructure/database/connection.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\infrastructure\database\connection.py)銆乕`session.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\infrastructure\database\session.py)銆乕`initializer.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\infrastructure\database\initializer.py)锛涙柊澧炰簡 Alembic 楠ㄦ灦鍜岄涓縼绉?[`alembic.ini`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆alembic.ini)銆乕`backend/infrastructure/database/migrations/env.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\infrastructure\database\migrations\env.py)銆乕`backend/infrastructure/database/migrations/versions/20260403_000001_create_phase_one_tables.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\infrastructure\database\migrations\versions\20260403_000001_create_phase_one_tables.py)锛涙洿鏂颁簡 [`backend/main.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\main.py) 浠ュ湪搴旂敤鍚姩鏈熷缓绔嬫暟鎹簱寮曟搸銆佹牎楠岃繛鎺ュ苟鎸傝浇浼氳瘽宸ュ巶锛涙洿鏂颁簡 [`requirements.txt`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆requirements.txt) 骞舵柊澧炴暟鎹簱娴嬭瘯 [`backend/tests/test_database.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\tests\test_database.py)銆?
+- 楠岃瘉缁撴灉锛氬凡鐢辩敤鎴蜂汉宸ラ獙璇佸苟纭閫氳繃锛涙湰鍦版墽琛?`python -m pytest backend/tests/test_database.py backend/tests/test_app.py backend/tests/test_config.py -p no:cacheprovider` 閫氳繃锛岄獙璇佷簡鏁版嵁搴撹繛鎺ユ鏌ャ€侀鎵硅〃鍒涘缓銆佹渶灏忔ā鍨嬫彃鍏ヤ笌鏌ヨ銆丄lembic 楠ㄦ灦瀛樺湪浠ュ強 FastAPI 鍚姩鏈熸暟鎹簱鍒濆鍖栭摼璺€?
+- 澶囨敞锛氭湰姝ュ彧瀹屾垚 PostgreSQL 鎺ュ叆搴曞骇涓庡叧绯诲瀷琛ㄧ粨鏋勶紝涓嶅寘鍚?`pgvector` 瀛楁銆佸悜閲忕储寮曟垨妫€绱㈤€昏緫锛涙祴璇曚腑浣跨敤宸ヤ綔鍖哄唴鐨?SQLite 涓存椂鏁版嵁搴撴枃浠舵浛浠ｇ郴缁熶复鏃剁洰褰曪紝浠ヨ閬垮綋鍓?Windows 鐜涓?`pytest` 榛樿涓存椂鐩綍鏉冮檺闂锛涚敓浜х洰鏍囨暟鎹簱浠嶇劧鏄?PostgreSQL銆?
+
+### 姝ラ 7锛氭帴鍏?pgvector
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氫负 [`backend/app/models/chunk.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\app\models\chunk.py) 鏂板浜?`embedding` 鍚戦噺瀛楁锛涙柊澧炰簡鍚戦噺绫诲瀷涓庢渶灏忓瓨鍙栨ā鍧?[`backend/infrastructure/vector/types.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\infrastructure\vector\types.py)銆乕`backend/infrastructure/vector/store.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\infrastructure\vector\store.py) 鍜?[`backend/infrastructure/vector/__init__.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\infrastructure\vector\__init__.py)锛涙柊澧炰簡绗?7 姝ヨ縼绉昏剼鏈?[`backend/infrastructure/database/migrations/versions/20260403_000002_add_chunk_embedding.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\infrastructure\database\migrations\versions\20260403_000002_add_chunk_embedding.py)锛涙洿鏂颁簡 [`backend/infrastructure/database/initializer.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\infrastructure\database\initializer.py) 浠ュ湪 PostgreSQL 鐜鍑嗗 `vector` 鎵╁睍锛涙洿鏂颁簡 [`requirements.txt`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆requirements.txt) 骞舵柊澧?鎵╁睍浜?[`backend/tests/test_vector.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\tests\test_vector.py) 鍜?[`backend/tests/test_database.py`](C:\Users\qwer\.codex\worktrees\23c5\RAG鏅鸿兘鏂囨。妫€绱㈠姪鎵媆backend\tests\test_database.py)銆?
+- 楠岃瘉缁撴灉锛氬凡鐢辩敤鎴蜂汉宸ラ獙璇佸苟纭閫氳繃锛涙湰鍦版墽琛?`python -m pytest backend/tests/test_database.py backend/tests/test_vector.py backend/tests/test_app.py backend/tests/test_config.py -p no:cacheprovider` 閫氳繃锛岄獙璇佷簡鍚戦噺瀛楁宸茶惤鍒板垎鍧楁ā鍨嬨€佹渶灏忓悜閲忓啓鍏ヤ笌鐩镐技搴︽煡璇㈠彲鐢ㄣ€佺┖鏁版嵁闆嗘煡璇㈣繑鍥炵┖缁撴灉锛屼互鍙婄幇鏈?FastAPI 涓庨厤缃祴璇曟湭鍥炲綊銆?
+- 澶囨敞锛氭湰姝ヤ弗鏍奸檺鍒跺湪 `pgvector` 鎺ュ叆搴曞骇锛屽彧瀹屾垚鍚戦噺鍒椼€佹渶灏忓瓨鍙栧拰鐩镐技搴︽煡璇紝涓嶅寘鍚悜閲忓寲鏈嶅姟銆丒mbedding 璋冪敤銆侀噸鎺掗€昏緫鎴栨寮忔绱㈢紪鎺掞紱PostgreSQL 璺緞浣跨敤 `pgvector`锛孲QLite 浠呬綔涓烘祴璇曞洖閫€鍒?JSON 瀛樺偍锛岄伩鍏嶆湰鍦拌嚜鍔ㄥ寲娴嬭瘯琚暟鎹簱鎵╁睍渚濊禆闃诲銆?
+
+### 姝ラ 8锛氭帴鍏?Redis 涓?RQ
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹屾垚 Redis 杩炴帴銆丷Q 闃熷垪灏佽銆乄orker 鍏ュ彛銆佷换鍔″叆闃熶笌浠诲姟鐘舵€佹煡璇㈤摼璺紝涓哄悗缁枃妗ｅ紓姝ュ叆搴撴彁渚涙寮忓熀纭€璁炬柦銆?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栨渶灏忎换鍔℃墽琛屻€佹垚鍔熶换鍔＄姸鎬佸拰澶辫触浠诲姟鐘舵€併€?
+- 澶囨敞锛氱涓€闃舵寮傛鑳藉姏鍥哄畾涓?`RQ + Redis`锛屾湭寮曞叆 Celery 鎴栧叾浠栭槦鍒楃郴缁熴€?
+
+### 姝ラ 9锛氬缓绔嬫枃浠跺瓨鍌ㄨ鍒欎笌鏂囨。鍏冩暟鎹ā鍨?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡寤虹珛涓婁紶鏂囦欢钀界洏瑙勫垯銆佹枃妗ｈ褰曚笌浠诲姟璁板綍鍒涘缓娴佺▼锛屽苟闄愬埗鍦ㄧ涓€闃舵鏈€灏忓厓鏁版嵁鑼冨洿鍐呫€?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栫鐩樿惤鐩樸€佹枃妗ｈ褰曘€佷换鍔¤褰曘€侀潪娉曟枃浠跺拰绌烘枃浠躲€?
+- 澶囨敞锛氶噸澶嶄笂浼犻噰鐢ㄢ€滄彁绀哄凡瀛樺湪锛屼笉閲嶅鍏ュ簱鈥濈瓥鐣ャ€?
+
+### 姝ラ 10锛氬疄鐜版枃妗ｄ笂浼犳帴鍙?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡钀藉湴 `POST /api/documents/upload`锛屾敮鎸?PDF銆丏OCX銆乀XT锛岃繑鍥?`document_id` 涓?`task_id`锛屽苟灏嗚€楁椂澶勭悊浜ょ粰鍚庡彴闃熷垪銆?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栧悎娉曚笂浼犮€侀潪娉曠被鍨嬩笂浼犲拰閲嶅涓婁紶鍦烘櫙銆?
+- 澶囨敞锛氫笂浼犺姹傜嚎绋嬪彧璐熻矗淇濆瓨鍜屽叆闃燂紝涓嶅悓姝ュ仛瑙ｆ瀽涓庡叆搴撱€?
+
+### 姝ラ 11锛氬疄鐜版枃妗ｇ姸鎬佷笌浠诲姟鐘舵€佹帴鍙?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡钀藉湴鏂囨。璇︽儏鎺ュ彛鍜屼换鍔¤鎯呮帴鍙ｏ紝杩斿洖涓庡悗鍙颁换鍔′竴鑷寸殑鐘舵€併€佸け璐ュ師鍥犲拰鏈€灏忓繀瑕佸厓鏁版嵁銆?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栧鐞嗕腑銆佸畬鎴愩€佸け璐ヤ笁绫荤姸鎬佽鍙栥€?
+- 澶囨敞锛氬墠绔埛鏂版仮澶嶈兘鍔涗緷璧栬繖涓や釜鎺ュ彛锛屽洜姝ゅ畠浠凡鎴愪负鏂囨。鍩熺殑姝ｅ紡鏌ヨ浜嬪疄鏉ユ簮銆?
+
+### 姝ラ 12锛氳縼绉绘棫瑙ｆ瀽閫昏緫鍒版柊鏈嶅姟灞?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡浠庢棫 `core/` 涓鐢ㄦ枃鏈В鏋愯兘鍔涳紝骞堕€氳繃鏂版湇鍔″眰鍖呬竴灞傜粺涓€杈撳嚭缁撴瀯銆?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩?TXT銆丳DF銆丏OCX 鎴愬姛瑙ｆ瀽鍜屾崯鍧忔枃妗ｅけ璐ヨ矾寰勩€?
+- 澶囨敞锛氭湰姝ュ彧杩佺Щ鏂囨湰閾捐矾锛屾病鏈夊紩鍏ュ妯℃€佽В鏋愩€?
+
+### 姝ラ 13锛氬疄鐜版枃鏈垎鍧楁湇鍔?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹炵幇娈佃惤浼樺厛鐨勭粺涓€鍒嗗潡绛栫暐锛岄粯璁?`chunk_size=800`銆乣chunk_overlap=150`锛屽苟淇濈暀 `document_id`銆乣page_number`銆乣chunk_index`銆乣source_type` 绛夊厓鏁版嵁銆?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栫ǔ瀹氬垎鍧椼€佺煭鏂囨。鍒嗗潡鍜岀┖鏂囨湰淇濇姢銆?
+- 澶囨敞锛氬垎鍧楃瓥鐣ュ凡鍐荤粨涓虹涓€闃舵榛樿鍊硷紝鍚庣画璋冩暣搴斿悓姝ユ洿鏂伴厤缃拰娴嬭瘯銆?
+
+### 姝ラ 14锛氬疄鐜板悜閲忓寲涓庡叆搴撴湇鍔?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡鎺ュ叆 DashScope Embedding锛屽皢鍒嗗潡鏂囨湰銆佸厓鏁版嵁鍜屽悜閲忓啓鍏?PostgreSQL + pgvector銆?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栧悜閲忓叆搴撴垚鍔熷拰 Embedding 澶辫触杞?`FAILED`銆?
+- 澶囨敞锛氭湰姝ュ彧鍋氬悜閲忓寲涓庡叆搴擄紝涓嶆墿灞曞埌宸ュ叿璋冪敤鎴栧妯℃€佸悜閲忓寲銆?
+
+### 姝ラ 15锛氫覆鑱斿畬鏁村紓姝ュ叆搴撴祦姘寸嚎
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡鐢?RQ 涓茶仈瑙ｆ瀽銆佸垎鍧椼€佸悜閲忓寲銆佺姸鎬佹洿鏂板拰澶辫触鍥炲啓锛屽舰鎴愬畬鏁村紓姝ュ叆搴撴祦姘寸嚎銆?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栨垚鍔熼摼璺€侀樁娈电姸鎬佹帹杩涘拰涓€斿け璐ュ仠姝㈠悗缁鐞嗐€?
+- 澶囨敞锛氭枃妗ｄ换鍔＄姸鎬佷弗鏍奸伒瀹?`UPLOADED -> PARSING -> CHUNKING -> EMBEDDING -> READY/FAILED`銆?
+
+### 姝ラ 16锛氬疄鐜版枃妗ｅ垹闄ゆ帴鍙?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹炵幇鏂囨。纭垹闄わ紝鍒犻櫎鏂囨。鍏冩暟鎹€佸叧鑱斿垎鍧楀拰鍘熷鏂囦欢銆?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栧凡瀛樺湪鏂囨。鍒犻櫎鍜屼笉瀛樺湪鏂囨。鎶ラ敊銆?
+- 澶囨敞锛氱涓€闃舵閲囩敤纭垹闄わ紝娌℃湁寮曞叆杞垹闄ゅ瓧娈点€?
+
+### 姝ラ 17锛氬疄鐜板熀纭€妫€绱㈡湇鍔?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹炵幇鍩轰簬 pgvector 鐨勫彫鍥炪€乣top_k=12` 鍊欓€夋绱㈠拰 `BGE Reranker` 鐨?`top_n=5` 閲嶆帓锛屽苟杈撳嚭寮曠敤鎵€闇€瀛楁銆?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栧懡涓€佺┖鍛戒腑鍜岄噸鎺掗摼璺€?
+- 澶囨敞锛氬綋鍓嶆绱粛鐒朵弗鏍奸檺鍒跺湪绗竴闃舵鐭ヨ瘑搴撳唴锛屼笉鎺ュ浘璋辨垨澶栭儴鎼滅储銆?
+
+### 姝ラ 18锛氬疄鐜板熀纭€闂瓟缂栨帓鏈嶅姟
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹炵幇闂杈撳叆銆佹绱€佷笂涓嬫枃鎷兼帴銆丵wen 璋冪敤鍜岀瓟妗堢敓鎴愮殑鍩虹闂瓟缂栨帓鏈嶅姟銆?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栫煡璇嗗簱鍛戒腑鍥炵瓟銆佺┖鍛戒腑淇濆畧鍥炲鍜屾ā鍨嬪け璐ヨ矾寰勩€?
+- 澶囨敞锛氱涓€闃舵涓嶅惎鐢?Tool Calling锛屾湭鍛戒腑鏃跺畞鍙皯绛斾篃涓嶅己绛斻€?
+
+### 姝ラ 19锛氬疄鐜颁細璇濆垱寤轰笌娑堟伅鎸佷箙鍖?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹炵幇浼氳瘽鍒涘缓銆侀杞棶棰樿嚜鍔ㄧ敓鎴愭爣棰樺拰闂瓟娑堟伅鎸佷箙鍖栥€?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栨爣棰樼敓鎴愩€佹秷鎭惤搴撳拰澶辫触鍥炴粴銆?
+- 澶囨敞锛氬紓甯告椂涓嶄細鐣欎笅鍗婃潯鍔╂墜娑堟伅銆?
+
+### 姝ラ 20锛氬疄鐜颁細璇濆垪琛ㄤ笌娑堟伅鍒楄〃鎺ュ彛
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹炵幇浼氳瘽鍒楄〃鍜屾秷鎭垪琛ㄦ帴鍙ｏ紝鎸夋渶杩戞椿璺冩帓搴忓苟杩斿洖绗竴闃舵鏈€灏忓繀瑕佸瓧娈点€?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栫┖鍒楄〃銆佸浼氳瘽鎺掑簭鍜屼笉瀛樺湪浼氳瘽閿欒銆?
+- 澶囨敞锛氬垪琛ㄦ帴鍙ｄ笉鍋氬鏉傜瓫閫夈€?
+
+### 姝ラ 21锛氬疄鐜板悓姝ヨ亰澶╂帴鍙?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹炵幇 `POST /api/chat/query`锛岃仈鍔ㄧ煡璇嗗簱闂瓟銆佹秷鎭寔涔呭寲鍜屽紩鐢ㄨ繑鍥炪€?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栨甯搁棶绛斻€佺┖闂鍜岄潪娉曚細璇濄€?
+- 澶囨敞锛氬悓姝ユ帴鍙ｅ拰娴佸紡鎺ュ彛鍏辩敤鍚屼竴濂楄亰澶╁煙鏈嶅姟銆?
+
+### 姝ラ 22锛氬疄鐜?SSE 娴佸紡鑱婂ぉ鎺ュ彛
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹炵幇 `POST /api/chat/stream`锛屽浐瀹氳緭鍑?`message_start`銆乣citation`銆乣token`銆乣message_end`銆乣error` 浜旂被浜嬩欢銆?
+- 楠岃瘉缁撴灉锛氬悗绔嚜鍔ㄥ寲娴嬭瘯宸茶鐩栨祦寮忔垚鍔熴€佸紓甯镐腑鏂拰娴佸紡缁撴潫鍚庡畬鏁存秷鎭寔涔呭寲銆?
+- 澶囨敞锛氫负閬靛畧绗竴闃舵杈圭晫锛屾湰姝ヤ笉寮曞叆 WebSocket銆?
+
+### 姝ラ 23锛氬疄鐜板墠绔枃妗ｄ笂浼犳祦绋?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬墠绔凡鎺ュ叆鏂囨。涓婁紶銆佸け璐ユ彁绀恒€佷换鍔＄姸鎬佹仮澶嶅拰鍒锋柊鍚庣户缁拷韪紱閫氳繃鏈湴鎸佷箙鍖栬褰?`document_id/task_id` 鎭㈠宸茶窡韪枃妗ｃ€?
+- 楠岃瘉缁撴灉锛氬墠绔瀯寤哄拰鍗曞厓娴嬭瘯閫氳繃锛涗笂浼犳垚鍔熴€佸け璐ュ拰鍒锋柊鎭㈠閾捐矾宸查獙璇併€?
+- 澶囨敞锛氫负閬靛畧鏃㈠畾鎺ュ彛杈圭晫锛屽墠绔病鏈夋搮鑷柊澧?`GET /api/documents`銆?
+
+### 姝ラ 24锛氬疄鐜板墠绔枃妗ｇ鐞嗛〉
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹屾垚鏂囨。鍒楄〃銆佹枃妗ｈ鎯呫€佷换鍔℃憳瑕佸拰鍒犻櫎鎿嶄綔銆?
+- 楠岃瘉缁撴灉锛氬墠绔瀯寤哄拰鍗曞厓娴嬭瘯閫氳繃锛涙枃妗ｆ煡鐪嬩笌鍒犻櫎琛屼负宸查獙璇併€?
+- 澶囨敞锛氬垹闄ゅ悗浼氬悓姝ユ竻鐞嗘湰鍦板凡璺熻釜鏂囨。璁板綍銆?
+
+### 姝ラ 25锛氬疄鐜板墠绔亰澶╁伐浣滃彴
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹屾垚浼氳瘽鍒楄〃銆佹秷鎭尯銆佽緭鍏ュ尯銆佸紩鐢ㄥ睍绀哄拰鏂板缓浼氳瘽銆?
+- 楠岃瘉缁撴灉锛氬墠绔瀯寤哄拰鍗曞厓娴嬭瘯閫氳繃锛涗細璇濆垏鎹€佸巻鍙叉秷鎭姞杞藉拰寮曠敤灞曠ず琛屼负宸查獙璇併€?
+- 澶囨敞锛氳亰澶╁煙鐘舵€佺粺涓€鐢?`chat` 浠撳簱绠＄悊銆?
+
+### 姝ラ 26锛氬疄鐜板墠绔祦寮忛棶绛斾綋楠?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬凡瀹屾垚鍩轰簬 `fetch + SSE` 鐨勬祦寮忛棶绛旇В鏋愶紝鏀寔 token 閫愭娓叉煋銆佸紩鐢ㄤ簨浠跺睍绀恒€佺粨鏉熸敹鏁涘拰閿欒涓柇澶勭悊銆?
+- 楠岃瘉缁撴灉锛氬墠绔瀯寤哄拰鍗曞厓娴嬭瘯閫氳繃锛涙甯告祦寮忋€佸紓甯镐腑鏂拰鍐嶆鍙戦棶鍦烘櫙宸查獙璇併€?
+- 澶囨敞锛氭祻瑙堝櫒鍘熺敓 `EventSource` 涓嶆敮鎸?`POST`锛屽洜姝ゅ綋鍓嶅墠绔噰鐢ㄦ墜鍔ㄨВ鏋?SSE 鏁版嵁甯с€?
+
+### 姝ラ 27锛氬缓绔嬪熀纭€鑷姩鍖栨祴璇?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氳ˉ榻愪簡鍓嶇涓婁紶銆佹枃妗ｇ鐞嗐€佽亰澶╂湇鍔°€佽亰澶╃姸鎬佸拰涓诲簲鐢ㄦ覆鏌撴祴璇曪紱鍚庣缁х画缁存寔涓婁紶銆佷换鍔＄姸鎬併€佹绱㈤棶绛斻€佷細璇濇秷鎭拰鏃ュ織閾捐矾娴嬭瘯銆?
+- 楠岃瘉缁撴灉锛歚cmd /c npm run test:unit -- --run` 鍜?`python -m pytest backend/tests -p no:cacheprovider` 閫氳繃锛涘綋鍓嶅悗绔祴璇曠粨鏋滀负 `87 passed`銆?
+- 澶囨敞锛氬悗缁柊澧炲姛鑳藉簲鍦ㄦ鍩虹涓婅ˉ娴嬶紝鑰屼笉鏄粫杩囪嚜鍔ㄥ寲楠岃瘉缁х画鎺ㄨ繘銆?
+
+### 姝ラ 28锛氬缓绔嬪熀纭€鏃ュ織涓庡彲瑙傛祴鎬?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧炵粨鏋勫寲鏃ュ織妯″潡銆佽姹傛爣璇嗕腑闂翠欢鍜屽叧閿摼璺棩蹇楀煁鐐癸紱涓婁紶銆佸紓姝ュ叆搴撱€佽亰澶╁拰 Worker 閾捐矾鐜板湪閮借兘鍏宠仈 `request_id`銆乣document_id`銆乣task_id`銆乣session_id` 绛夋爣璇嗐€?
+- 楠岃瘉缁撴灉锛歚python -m pytest backend/tests -p no:cacheprovider` 閫氳繃锛屾柊澧炴棩蹇楁祴璇曡鐩栬姹傛爣璇嗛€忎紶鍜屾棩蹇楀瓧娈靛瓨鍦ㄦ€с€?
+- 澶囨敞锛氱涓€闃舵娌℃湁寮曞叆澶栭儴鐩戞帶骞冲彴锛屾棩蹇楁槸褰撳墠鍞竴姝ｅ紡鍙娴嬫€ф潵婧愩€?
+
+### 姝ラ 29锛氬畬鎴愮涓€闃舵闆嗘垚楠屾敹
+
+- 鐘舵€侊細鏈紑濮?
+- 瀹屾垚鏃堕棿锛?
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛?
+- 楠岃瘉缁撴灉锛?
+- 澶囨敞锛?
+
+---
+
+## 鏇存柊璁板綍
 
 ### 2026-04-03
 
-- 初始化 `memory-bank/progress.md`
-- 建立进度总览、状态说明、步骤记录模板和 29 个实施步骤的跟踪骨架
-- 用户已确认第 1 步验证通过
-- 将步骤 1 更新为“已完成”，并补充冻结范围、默认值、验证结论与文档职责说明
-- 用户已确认第 2 步验证通过
-- 将步骤 2 更新为“已完成”，并补充目录骨架、结构验证结果与迁移约束
-- 用户已确认第 3 步验证通过
-- 将步骤 3 更新为“已完成”，并补充统一配置体系、配置测试结果与下一步建议
-- 2026-04-04：批量完成并验证步骤 8-11，覆盖 Redis/RQ 异步底座、文件存储规则、文档上传接口、文档与任务状态接口
+- 鍒濆鍖?`memory-bank/progress.md`
+- 寤虹珛杩涘害鎬昏銆佺姸鎬佽鏄庛€佹楠よ褰曟ā鏉垮拰 29 涓疄鏂芥楠ょ殑璺熻釜楠ㄦ灦
+- 鐢ㄦ埛宸茬‘璁ょ 1 姝ラ獙璇侀€氳繃
+- 灏嗘楠?1 鏇存柊涓衡€滃凡瀹屾垚鈥濓紝骞惰ˉ鍏呭喕缁撹寖鍥淬€侀粯璁ゅ€笺€侀獙璇佺粨璁轰笌鏂囨。鑱岃矗璇存槑
+- 鐢ㄦ埛宸茬‘璁ょ 2 姝ラ獙璇侀€氳繃
+- 灏嗘楠?2 鏇存柊涓衡€滃凡瀹屾垚鈥濓紝骞惰ˉ鍏呯洰褰曢鏋躲€佺粨鏋勯獙璇佺粨鏋滀笌杩佺Щ绾︽潫
+- 鐢ㄦ埛宸茬‘璁ょ 3 姝ラ獙璇侀€氳繃
+- 灏嗘楠?3 鏇存柊涓衡€滃凡瀹屾垚鈥濓紝骞惰ˉ鍏呯粺涓€閰嶇疆浣撶郴銆侀厤缃祴璇曠粨鏋滀笌涓嬩竴姝ュ缓璁?
+- 2026-04-04锛氭壒閲忓畬鎴愬苟楠岃瘉姝ラ 8-11锛岃鐩?Redis/RQ 寮傛搴曞骇銆佹枃浠跺瓨鍌ㄨ鍒欍€佹枃妗ｄ笂浼犳帴鍙ｃ€佹枃妗ｄ笌浠诲姟鐘舵€佹帴鍙?
 
 ---
 
-## 2026-04-04 补充记录：步骤 8-11
+## 2026-04-04 琛ュ厖璁板綍锛氭楠?8-11
 
-### 步骤 8：接入 Redis 与 RQ
+### 姝ラ 8锛氭帴鍏?Redis 涓?RQ
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧?`backend/infrastructure/queue/connection.py`銆乣backend/infrastructure/queue/queue.py` 鍜?`worker/main.py`锛涘缓绔?Redis 杩炴帴妫€鏌ャ€丷Q 闃熷垪鍒涘缓銆佷换鍔″叆闃熻緟鍔╁嚱鏁颁笌 Worker 鍚姩鍏ュ彛锛涙柊澧?`backend/app/tasks/system_tasks.py` 浣滀负鏈€灏忎换鍔℃墽琛屾牱渚嬨€?
+- 楠岃瘉缁撴灉锛歚backend/tests/test_queue.py` 涓?`backend/tests/test_worker_bootstrap.py` 宸查€氳繃锛涘紓姝ュ熀纭€璁炬柦鐩稿叧娴嬭瘯宸茬撼鍏ュ畬鏁村悗绔祴璇曢泦骞堕€氳繃銆?
+- 澶囨敞锛氬綋鍓嶅彧瀹屾垚寮傛鍩虹璁炬柦搴曞骇锛屾病鏈夋彁鍓嶅疄鐜版枃妗ｈВ鏋愭祦姘寸嚎銆?
+
+### 姝ラ 9锛氬缓绔嬫枃浠跺瓨鍌ㄨ鍒欎笌鏂囨。鍏冩暟鎹ā鍨?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧?`backend/infrastructure/storage/file_storage.py`锛屽浐瀹氱涓€闃舵鍏佽涓婁紶鐨?`pdf/docx/txt`锛涚粺涓€鏂囦欢鍚嶆牎楠屻€佺┖鏂囦欢鏍￠獙銆佸ぇ灏忛檺鍒躲€佹墿灞曞悕鏍￠獙銆佸熀浜?`sha256(content)` 鐨勮惤鐩樿矾寰勭敓鎴愶紱鏂囨。鍏冩暟鎹繚鎸佹渶灏忓瓧娈甸泦锛屽苟鎸夊唴瀹瑰搱甯屾墽琛岄噸澶嶆枃浠跺垽鏂€?
+- 楠岃瘉缁撴灉锛歚backend/tests/test_file_storage.py` 宸茶鐩栨枃浠跺瓨鍌ㄥ箓绛夋€у拰鍏抽敭澶辫触璺緞锛屽苟宸查€氳繃銆?
+- 澶囨敞锛氬綋鍓嶉噸澶嶄笂浼犺涔夋槸鈥滃悓鍐呭涓嶉噸澶嶅叆搴撯€濓紝涓嶆槸鎸夊師鏂囦欢鍚嶅幓閲嶃€?
+
+### 姝ラ 10锛氬疄鐜版枃妗ｄ笂浼犳帴鍙?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬疄鐜?`POST /api/documents/upload`锛涗笂浼犳垚鍔熷悗杩斿洖 `document_id` 涓?`task_id`锛涜姹傜嚎绋嬪唴鍙礋璐ｆ寔涔呭寲鏂囦欢銆佸垱寤烘枃妗ｄ笌浠诲姟璁板綍銆佹彁浜ゅ紓姝ヤ换鍔★紝涓嶅悓姝ュ畬鎴愯В鏋愪笌鍏ュ簱銆?
+- 楠岃瘉缁撴灉锛歚backend/tests/test_documents_api.py` 宸茶鐩?`.txt/.pdf/.docx` 涓夌被鎴愬姛涓婁紶銆侀噸澶嶄笂浼犲啿绐併€佺┖鍐呭鍜屼笉鏀寔鎵╁睍鍚嶅け璐ャ€佸叆闃熷け璐ュ洖婊氾紝骞跺凡閫氳繃銆?
+- 澶囨敞锛氬綋鍓嶄笂浼犻摼璺€氳繃 monkeypatch 闅旂 Redis/RQ锛屾帴鍙ｆ祴璇曞叧娉ㄧ殑鏄湇鍔＄紪鎺掍笌鎸佷箙鍖栧绾︺€?
+
+### 姝ラ 11锛氬疄鐜版枃妗ｇ姸鎬佷笌浠诲姟鐘舵€佹帴鍙?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氬疄鐜?`GET /api/documents/{document_id}` 涓?`GET /api/tasks/{task_id}`锛涚粺涓€杩斿洖鏂囨。/浠诲姟鏈€灏忓繀瑕佸瓧娈碉紝骞跺涓嶅瓨鍦ㄨ祫婧愯繑鍥炴爣鍑嗛敊璇粨鏋勩€?
+- 楠岃瘉缁撴灉锛歚backend/tests/test_documents_api.py` 宸茶鐩栨枃妗ｇ姸鎬佹煡璇€佷换鍔＄姸鎬佹煡璇㈠拰涓ょ被 404 閿欒璺緞锛屽苟宸查€氳繃锛涘畬鏁村悗绔祴璇曞懡浠?`python -m pytest backend/tests/test_app.py backend/tests/test_config.py backend/tests/test_database.py backend/tests/test_vector.py backend/tests/test_queue.py backend/tests/test_worker_bootstrap.py backend/tests/test_file_storage.py backend/tests/test_documents_api.py -p no:cacheprovider` 缁撴灉涓?`40 passed`銆?
+- 澶囨敞锛氬綋鍓嶇姸鎬佹帴鍙ｄ粛鍙弽鏄?`UPLOADED` 闃舵锛涘悗缁 12-15 姝ヤ細缁х画鎶?`PARSING/CHUNKING/EMBEDDING/READY/FAILED` 鎺ヨ捣鏉ャ€?
+
+### 姝ラ 12锛氳縼绉绘棫瑙ｆ瀽閫昏緫鍒版柊鏈嶅姟灞?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧?`backend/app/services/parser_service.py`锛屾妸鏃?`core/document_parser.py` 涓湡姝ｅ€煎緱淇濈暀鐨勨€滄寜鏂囦欢绫诲瀷閫夋嫨 loader + 缁熶竴瑙ｆ瀽鍏ュ彛 + 鍏冩暟鎹爣鍑嗗寲鈥濇娊鎴愮函鍚庣瑙ｆ瀽鏈嶅姟锛屾帴鍙ｅ浐瀹氫负 `parse_file(storage_path, file_type, original_name)`銆?
+- 楠岃瘉缁撴灉锛歚backend/tests/test_parser_service.py` 宸茶鐩?TXT 鐪熻В鏋愩€丳DF/DOCX loader 鍒嗘淳銆佺己澶辨枃浠跺拰鎹熷潖鏂囦欢澶辫触璺緞锛屽苟宸查€氳繃銆?
+- 澶囨敞锛氬綋鍓嶈В鏋愭湇鍔″彧璐熻矗璇诲彇涓庢爣鍑嗗寲锛屼笉鍦ㄦ澶勬贩鍏ュ垎鍧椼€佸叆搴撴垨浠诲姟鐘舵€佹帹杩涖€?
+
+### 姝ラ 13锛氬疄鐜版枃鏈垎鍧楁湇鍔?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧?`backend/app/services/chunking_service.py`锛屾彁渚涙爣鍑嗗寲 `ChunkPayload`锛岀粺涓€淇濈暀 `document_id`銆乣chunk_index`銆乣source_type`銆乣page_number` 绛夊厓鏁版嵁锛屽苟杩囨护绌哄唴瀹瑰垎鍧椼€?
+- 楠岃瘉缁撴灉锛歚backend/tests/test_chunking_service.py` 宸茶鐩栫ǔ瀹氬垎鍧椼€佸厓鏁版嵁琛ラ綈銆佺煭鏂囨。鑷冲皯鐢熸垚涓€涓?chunk 鍜岀┖鍐呭杩囨护锛屽苟宸查€氳繃銆?
+- 澶囨敞锛氬綋鍓嶅彧瀹炵幇绗竴闃舵绾枃鏈垎鍧楋紝娌℃湁鎻愬墠寮曞叆鐖跺瓙鍧椼€佸妯℃€佸瓧娈垫垨澶嶆潅灞傜骇缁撴瀯銆?
+
+### 姝ラ 14锛氬疄鐜板悜閲忓寲涓庡叆搴撴湇鍔?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧?`backend/infrastructure/llm/embedding_client.py` 浣滀负 DashScope Embedding 閫傞厤灞傦紱鍦ㄧ紪鎺掓祦绋嬩腑瀹屾垚 chunk 鏂囨湰鍚戦噺鍖栥€乣chunks` 琛ㄥ啓鍏ヤ笌 `pgvector` embedding 瀛楁鏇存柊銆?
+- 楠岃瘉缁撴灉锛歚backend/tests/test_embedding_client.py` 宸茶鐩栧悜閲忓寲鎴愬姛銆佹彁渚涙柟澶辫触鍜岃繑鍥炴暟閲忎笉鍖归厤涓夌被琛屼负锛沗backend/tests/test_document_ingestion.py` 宸查獙璇?chunk 涓?embedding 涓€璧疯惤搴撱€?
+- 澶囨敞锛氬綋鍓嶉€氳繃 monkeypatch 闅旂鐪熷疄 DashScope 缃戠粶璋冪敤锛屼繚鎸佹祴璇曞彲閲嶅鎵ц銆?
+
+### 姝ラ 15锛氫覆鑱斿畬鏁村紓姝ュ叆搴撴祦姘寸嚎
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧?`backend/app/orchestrators/document_ingestion.py` 涓茶仈 `PARSING -> CHUNKING -> EMBEDDING -> READY/FAILED` 鐘舵€佹満锛涘崌绾?`backend/app/tasks/document_tasks.py`锛岃 RQ 浠诲姟鍏ュ彛鏀逛负鐪熷疄鎵ц瀹屾暣鍏ュ簱娴佹按绾裤€?
+- 楠岃瘉缁撴灉锛氬畬鏁村悗绔祴璇曞懡浠?`python -m pytest backend/tests/test_app.py backend/tests/test_config.py backend/tests/test_database.py backend/tests/test_vector.py backend/tests/test_queue.py backend/tests/test_worker_bootstrap.py backend/tests/test_file_storage.py backend/tests/test_documents_api.py backend/tests/test_parser_service.py backend/tests/test_chunking_service.py backend/tests/test_embedding_client.py backend/tests/test_document_ingestion.py -p no:cacheprovider` 缁撴灉涓?`54 passed`銆?
+- 澶囨敞锛氬綋鍓嶆祦姘寸嚎宸茶兘鐪熷疄鏇存柊鏂囨。/浠诲姟鐘舵€佸苟澶勭悊澶辫触鍥炲啓锛屼絾杩樻湭瀹炵幇鍒犻櫎鎺ュ彛銆佹绱㈡湇鍔″拰闂瓟缂栨帓銆?
+
+### 姝ラ 16锛氬疄鐜版枃妗ｅ垹闄ゆ帴鍙?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氫负 `backend/api/routes/documents.py` 鏂板 `DELETE /api/documents/{document_id}`锛涘湪 `backend/app/services/document_service.py` 涓疄鐜扮‖鍒犻櫎閫昏緫锛屽垹闄ゆ枃妗ｈ褰曞悗鍚屾鍒犻櫎婧愭枃浠躲€?
+- 楠岃瘉缁撴灉锛歚backend/tests/test_documents_api.py` 宸茶鐩栧垹闄ゆ垚鍔熴€佹暟鎹簱璁板綍娓呯悊銆佸師濮嬫枃浠跺垹闄ゅ拰涓嶅瓨鍦ㄦ枃妗?404锛屽苟宸查€氳繃銆?
+- 澶囨敞锛氬綋鍓嶄緷璧栨暟鎹簱绾х骇鑱斿垹闄ゆ竻鐞嗗叧鑱斾换鍔′笌鍒嗗潡锛涜繖鏄鍚堢涓€闃舵鈥滅‖鍒犻櫎鈥濆彛寰勭殑瀹炵幇銆?
+
+### 姝ラ 17锛氬疄鐜板熀纭€妫€绱㈡湇鍔?
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧?`backend/infrastructure/llm/reranker_client.py` 鍜?`backend/app/services/retrieval_service.py`锛涘浐瀹氣€滄煡璇㈠悜閲忓寲 -> pgvector 鍙洖 -> DashScope Reranker 閲嶆帓 -> 缁熶竴寮曠敤缁撴瀯鈥濊繖鏉℃绱富绾裤€?
+- 楠岃瘉缁撴灉锛歚backend/tests/test_reranker_client.py` 涓?`backend/tests/test_retrieval_service.py` 宸查獙璇侀噸鎺掔粨鏋滈『搴忋€佺┖缁撴灉鍥為€€銆佸け璐ュ鐞嗗拰寮曠敤瀛楁琛ュ叏锛屽苟宸查€氳繃銆?
+- 澶囨敞锛氬綋鍓嶆绱㈡湇鍔″凡缁忚緭鍑?`document_id/document_name/chunk_id/content/page_number/score`锛屽彲鐩存帴渚涢棶绛旂紪鎺掑鐢ㄣ€?
+
+### 姝ラ 18锛氬疄鐜板熀纭€闂瓟缂栨帓鏈嶅姟
+
+- 鐘舵€侊細宸插畬鎴?
+- 瀹屾垚鏃堕棿锛?026-04-04
+- 瀵瑰簲璁″垝锛歚implementation-plan.md`
+- 瀹炵幇鍐呭锛氭柊澧?`backend/infrastructure/llm/chat_client.py` 鍜?`backend/app/services/qa_service.py`锛涘舰鎴愨€滈棶棰樿緭鍏?-> 妫€绱?-> 涓婁笅鏂囨嫾鎺?-> Qwen 鐢熸垚 -> 杩斿洖绛旀涓庡紩鐢ㄢ€濈殑鏈€灏忕煡璇嗗簱闂瓟鏈嶅姟銆?
+- 楠岃瘉缁撴灉锛氬畬鏁村悗绔祴璇曞懡浠?`python -m pytest backend/tests/test_app.py backend/tests/test_config.py backend/tests/test_database.py backend/tests/test_vector.py backend/tests/test_queue.py backend/tests/test_worker_bootstrap.py backend/tests/test_file_storage.py backend/tests/test_documents_api.py backend/tests/test_parser_service.py backend/tests/test_chunking_service.py backend/tests/test_embedding_client.py backend/tests/test_document_ingestion.py backend/tests/test_reranker_client.py backend/tests/test_retrieval_service.py backend/tests/test_chat_client.py backend/tests/test_qa_service.py -p no:cacheprovider` 缁撴灉涓?`66 passed`銆?
+- 澶囨敞锛氬綋鍓嶅彧瀹炵幇鏈嶅姟灞傞棶绛旂紪鎺掞紝杩樻病鏈夋帴鍏ヤ細璇濇寔涔呭寲鎺ュ彛銆佸悓姝ヨ亰澶╂帴鍙ｅ拰 SSE 娴佸紡杈撳嚭銆?
+- 鐢ㄦ埛宸茬‘璁ょ 4 姝ラ獙璇侀€氳繃
+- 灏嗘楠?4 鏇存柊涓衡€滃凡瀹屾垚鈥濓紝骞惰ˉ鍏?FastAPI 鍩虹搴旂敤銆佸紓甯稿鐞嗐€佸仴搴锋鏌ヤ笌鎺ュ彛娴嬭瘯缁撴灉
+- 鐢ㄦ埛宸茬‘璁ょ 5 姝ラ獙璇侀€氳繃
+- 灏嗘楠?5 鏇存柊涓衡€滃凡瀹屾垚鈥濓紝骞惰ˉ鍏呭墠绔伐绋嬪垵濮嬪寲銆佸熀纭€宸ヤ綔鍙板竷灞€銆佺粺涓€璇锋眰灞傘€佸仴搴锋鏌ヨ仈閫氬拰鍓嶇楠岃瘉缁撴灉
+- 鐢ㄦ埛宸茬‘璁ょ 6 姝ラ獙璇侀€氳繃
+- 灏嗘楠?6 鏇存柊涓衡€滃凡瀹屾垚鈥濓紝骞惰ˉ鍏?PostgreSQL 鎺ュ叆搴曞骇銆佹渶灏忎笟鍔℃ā鍨嬨€丄lembic 杩佺Щ楠ㄦ灦鍜屾暟鎹簱娴嬭瘯缁撴灉
+- 鐢ㄦ埛宸茬‘璁ょ 7 姝ラ獙璇侀€氳繃
+- 灏嗘楠?7 鏇存柊涓衡€滃凡瀹屾垚鈥濓紝骞惰ˉ鍏?pgvector 鍚戦噺鍒椼€佹渶灏忕浉浼煎害鏌ヨ鑳藉姏鍜屽悜閲忔祴璇曠粨鏋?
+
+- 2026-04-05：将步骤 29 更新为“已完成”，并明确记录本次为 acceptance 验收模式通过，正式 DashScope 联网验收仍待补。
+
+
+- 2026-04-05???? 29 ????????????????? acceptance ????????? DashScope ????????
+
+
+## 2026-04-05 ??????
+
+- ???????29
+- ????????
+- ???????????????????? DashScope ????
+
+### ?? 29?????????????????
+
+- ??????
+- ?????2026-04-05
+- ?????acceptance
+- ???????? `acceptance` ???????????? Worker????? TXT ????????????????????????SSE ?????????/???????????????????????????? Windows ? `RQ Worker` ???????? LLM ?????????????
+- ?????`python -m pytest backend/tests -p no:cacheprovider` ??? `94 passed`?`/api/health` ?? `llm_mode=acceptance`????????? `READY`?`POST /api/chat/query` ?????`POST /api/chat/stream` ?? `message_start/citation/token/message_end` ????????????? `unsupported_file_type`???????????? `document_not_found`?
+- ?????????????????????????????? `DashScope` ??????????????????????????????
+
+
+## 2026-04-05 ????????
+
+- ???? 29 ???????????????
+- ?????`llm_mode=production`?
+- ???????`PostgreSQL(5433, pgvector)`?`Redis(6379)`??? `RQ Worker`??? DashScope Embedding / Chat / Rerank?
+- ?????????
+  - ?? `backend/infrastructure/vector/store.py` ? PostgreSQL ?????????? `Chunk.embedding.cosine_distance(...)` ? `TypeDecorator` ??? `AttributeError`?
+  - ?? `backend/infrastructure/llm/reranker_client.py`????? DashScope ?? `TextReRank.call`????? `RERANKER_MODEL` ??? `gte-rerank-v2`?
+- ??????`python -m pytest backend/tests -p no:cacheprovider`??? `95 passed`?
+- ???????????`data/final-acceptance/production-final-acceptance-summary.json`?
+- ??????
+  - ?? TXT ? PDF ??????? `READY`?
+  - ?????????
+  - ?????? `message_start / citation / token / message_end`?
+  - ?????????????
+  - ???????? `400`?
+  - ?? PDF ???? `FAILED`?
+  - ??????????? `404`?
+
+## 2026-04-05 第二次真实浏览器验收
 
 - 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增 `backend/infrastructure/queue/connection.py`、`backend/infrastructure/queue/queue.py` 和 `worker/main.py`；建立 Redis 连接检查、RQ 队列创建、任务入队辅助函数与 Worker 启动入口；新增 `backend/app/tasks/system_tasks.py` 作为最小任务执行样例。
-- 验证结果：`backend/tests/test_queue.py` 与 `backend/tests/test_worker_bootstrap.py` 已通过；异步基础设施相关测试已纳入完整后端测试集并通过。
-- 备注：当前只完成异步基础设施底座，没有提前实现文档解析流水线。
+- 对应计划：`implementation-plan.md` 步骤 29
+- 验收方式：隔离 PostgreSQL 数据库 + Redis + RQ Worker + 真实 DashScope 服务 + 真实浏览器自动化
+- 验收结果文件：`data/ui-check/20260405-190029-rerun/summary.json`
+- 关键截图：`data/ui-check/20260405-190029-rerun/01-home.png`、`data/ui-check/20260405-190029-rerun/99-final.png`
+- 自动化验证：`python -m pytest backend/tests -p no:cacheprovider`，结果 `97 passed`
 
-### 步骤 9：建立文件存储规则与文档元数据模型
+本轮实际跑通的链路：
 
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增 `backend/infrastructure/storage/file_storage.py`，固定第一阶段允许上传的 `pdf/docx/txt`；统一文件名校验、空文件校验、大小限制、扩展名校验、基于 `sha256(content)` 的落盘路径生成；文档元数据保持最小字段集，并按内容哈希执行重复文件判断。
-- 验证结果：`backend/tests/test_file_storage.py` 已覆盖文件存储幂等性和关键失败路径，并已通过。
-- 备注：当前重复上传语义是“同内容不重复入库”，不是按原文件名去重。
+- 前端主页加载并显示后端健康状态
+- TXT 上传并进入 `READY`
+- PDF 上传并进入 `READY`
+- 非法文件上传在 UI 中显示“上传失败 / 不支持的文件类型”
+- 损坏 PDF 上传后进入 `FAILED`
+- 基于真实知识库内容发起流式问答，并返回包含正确引用的回答
+- 页面刷新后恢复文档列表、会话和消息历史
+- 删除文档后，前端文档卡片消失，后端 `GET /api/documents/{document_id}` 返回 `404`
 
-### 步骤 10：实现文档上传接口
+本轮补充说明：
 
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：实现 `POST /api/documents/upload`；上传成功后返回 `document_id` 与 `task_id`；请求线程内只负责持久化文件、创建文档与任务记录、提交异步任务，不同步完成解析与入库。
-- 验证结果：`backend/tests/test_documents_api.py` 已覆盖 `.txt/.pdf/.docx` 三类成功上传、重复上传冲突、空内容和不支持扩展名失败、入队失败回滚，并已通过。
-- 备注：当前上传链路通过 monkeypatch 隔离 Redis/RQ，接口测试关注的是服务编排与持久化契约。
-
-### 步骤 11：实现文档状态与任务状态接口
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：实现 `GET /api/documents/{document_id}` 与 `GET /api/tasks/{task_id}`；统一返回文档/任务最小必要字段，并对不存在资源返回标准错误结构。
-- 验证结果：`backend/tests/test_documents_api.py` 已覆盖文档状态查询、任务状态查询和两类 404 错误路径，并已通过；完整后端测试命令 `python -m pytest backend/tests/test_app.py backend/tests/test_config.py backend/tests/test_database.py backend/tests/test_vector.py backend/tests/test_queue.py backend/tests/test_worker_bootstrap.py backend/tests/test_file_storage.py backend/tests/test_documents_api.py -p no:cacheprovider` 结果为 `40 passed`。
-- 备注：当前状态接口仍只反映 `UPLOADED` 阶段；后续第 12-15 步会继续把 `PARSING/CHUNKING/EMBEDDING/READY/FAILED` 接起来。
-
-### 步骤 12：迁移旧解析逻辑到新服务层
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增 `backend/app/services/parser_service.py`，把旧 `core/document_parser.py` 中真正值得保留的“按文件类型选择 loader + 统一解析入口 + 元数据标准化”抽成纯后端解析服务，接口固定为 `parse_file(storage_path, file_type, original_name)`。
-- 验证结果：`backend/tests/test_parser_service.py` 已覆盖 TXT 真解析、PDF/DOCX loader 分派、缺失文件和损坏文件失败路径，并已通过。
-- 备注：当前解析服务只负责读取与标准化，不在此处混入分块、入库或任务状态推进。
-
-### 步骤 13：实现文本分块服务
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增 `backend/app/services/chunking_service.py`，提供标准化 `ChunkPayload`，统一保留 `document_id`、`chunk_index`、`source_type`、`page_number` 等元数据，并过滤空内容分块。
-- 验证结果：`backend/tests/test_chunking_service.py` 已覆盖稳定分块、元数据补齐、短文档至少生成一个 chunk 和空内容过滤，并已通过。
-- 备注：当前只实现第一阶段纯文本分块，没有提前引入父子块、多模态字段或复杂层级结构。
-
-### 步骤 14：实现向量化与入库服务
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增 `backend/infrastructure/llm/embedding_client.py` 作为 DashScope Embedding 适配层；在编排流程中完成 chunk 文本向量化、`chunks` 表写入与 `pgvector` embedding 字段更新。
-- 验证结果：`backend/tests/test_embedding_client.py` 已覆盖向量化成功、提供方失败和返回数量不匹配三类行为；`backend/tests/test_document_ingestion.py` 已验证 chunk 与 embedding 一起落库。
-- 备注：当前通过 monkeypatch 隔离真实 DashScope 网络调用，保持测试可重复执行。
-
-### 步骤 15：串联完整异步入库流水线
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增 `backend/app/orchestrators/document_ingestion.py` 串联 `PARSING -> CHUNKING -> EMBEDDING -> READY/FAILED` 状态机；升级 `backend/app/tasks/document_tasks.py`，让 RQ 任务入口改为真实执行完整入库流水线。
-- 验证结果：完整后端测试命令 `python -m pytest backend/tests/test_app.py backend/tests/test_config.py backend/tests/test_database.py backend/tests/test_vector.py backend/tests/test_queue.py backend/tests/test_worker_bootstrap.py backend/tests/test_file_storage.py backend/tests/test_documents_api.py backend/tests/test_parser_service.py backend/tests/test_chunking_service.py backend/tests/test_embedding_client.py backend/tests/test_document_ingestion.py -p no:cacheprovider` 结果为 `54 passed`。
-- 备注：当前流水线已能真实更新文档/任务状态并处理失败回写，但还未实现删除接口、检索服务和问答编排。
-
-### 步骤 16：实现文档删除接口
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：为 `backend/api/routes/documents.py` 新增 `DELETE /api/documents/{document_id}`；在 `backend/app/services/document_service.py` 中实现硬删除逻辑，删除文档记录后同步删除源文件。
-- 验证结果：`backend/tests/test_documents_api.py` 已覆盖删除成功、数据库记录清理、原始文件删除和不存在文档 404，并已通过。
-- 备注：当前依赖数据库级级联删除清理关联任务与分块；这是符合第一阶段“硬删除”口径的实现。
-
-### 步骤 17：实现基础检索服务
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增 `backend/infrastructure/llm/reranker_client.py` 和 `backend/app/services/retrieval_service.py`；固定“查询向量化 -> pgvector 召回 -> DashScope Reranker 重排 -> 统一引用结构”这条检索主线。
-- 验证结果：`backend/tests/test_reranker_client.py` 与 `backend/tests/test_retrieval_service.py` 已验证重排结果顺序、空结果回退、失败处理和引用字段补全，并已通过。
-- 备注：当前检索服务已经输出 `document_id/document_name/chunk_id/content/page_number/score`，可直接供问答编排复用。
-
-### 步骤 18：实现基础问答编排服务
-
-- 状态：已完成
-- 完成时间：2026-04-04
-- 对应计划：`implementation-plan.md`
-- 实现内容：新增 `backend/infrastructure/llm/chat_client.py` 和 `backend/app/services/qa_service.py`；形成“问题输入 -> 检索 -> 上下文拼接 -> Qwen 生成 -> 返回答案与引用”的最小知识库问答服务。
-- 验证结果：完整后端测试命令 `python -m pytest backend/tests/test_app.py backend/tests/test_config.py backend/tests/test_database.py backend/tests/test_vector.py backend/tests/test_queue.py backend/tests/test_worker_bootstrap.py backend/tests/test_file_storage.py backend/tests/test_documents_api.py backend/tests/test_parser_service.py backend/tests/test_chunking_service.py backend/tests/test_embedding_client.py backend/tests/test_document_ingestion.py backend/tests/test_reranker_client.py backend/tests/test_retrieval_service.py backend/tests/test_chat_client.py backend/tests/test_qa_service.py -p no:cacheprovider` 结果为 `66 passed`。
-- 备注：当前只实现服务层问答编排，还没有接入会话持久化接口、同步聊天接口和 SSE 流式输出。
-- 用户已确认第 4 步验证通过
-- 将步骤 4 更新为“已完成”，并补充 FastAPI 基础应用、异常处理、健康检查与接口测试结果
-- 用户已确认第 5 步验证通过
-- 将步骤 5 更新为“已完成”，并补充前端工程初始化、基础工作台布局、统一请求层、健康检查联通和前端验证结果
-- 用户已确认第 6 步验证通过
-- 将步骤 6 更新为“已完成”，并补充 PostgreSQL 接入底座、最小业务模型、Alembic 迁移骨架和数据库测试结果
-- 用户已确认第 7 步验证通过
-- 将步骤 7 更新为“已完成”，并补充 pgvector 向量列、最小相似度查询能力和向量测试结果
+- 上一轮浏览器脚本把“聊天区里保留的旧引用文本”误判成“文档删除未生效”；本轮已改为以“文档卡片是否消失 + 删除后接口是否 404”为准
+- 这次验收是在独立端口和独立数据库中完成的，避免被本机其他占用 `8000/4173` 端口的项目污染

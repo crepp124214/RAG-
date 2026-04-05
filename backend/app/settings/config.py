@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 from dataclasses import dataclass
@@ -10,8 +10,9 @@ from dotenv import dotenv_values
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_ENV_FILE = PROJECT_ROOT / ".env"
-ALLOWED_APP_ENVS = {"development", "test", "production"}
+DEFAULT_ENV_FILE = PROJECT_ROOT / '.env'
+ALLOWED_APP_ENVS = {'development', 'test', 'production'}
+ALLOWED_LLM_MODES = {'production', 'acceptance'}
 
 
 class SettingsError(ValueError):
@@ -27,6 +28,7 @@ class BackendSettings:
     redis_url: str
     dashscope_api_key: str
     llm_provider: str
+    llm_mode: str
     llm_base_url: str | None
     qwen_chat_model: str
     embedding_model: str
@@ -72,24 +74,24 @@ def _merge_env_values(
 
 
 def _require(values: Mapping[str, str], key: str) -> str:
-    value = values.get(key, "").strip()
+    value = values.get(key, '').strip()
     if value:
         return value
-    raise SettingsError(f"缺少必需环境变量: {key}")
+    raise SettingsError(f'缺少必需环境变量: {key}')
 
 
 def _get_int(values: Mapping[str, str], key: str, default: int) -> int:
     raw = values.get(key)
-    if raw is None or str(raw).strip() == "":
+    if raw is None or str(raw).strip() == '':
         return default
 
     try:
         parsed = int(str(raw).strip())
     except ValueError as exc:
-        raise SettingsError(f"环境变量 {key} 必须是整数") from exc
+        raise SettingsError(f'环境变量 {key} 必须是整数') from exc
 
     if parsed <= 0:
-        raise SettingsError(f"环境变量 {key} 必须大于 0")
+        raise SettingsError(f'环境变量 {key} 必须大于 0')
 
     return parsed
 
@@ -108,42 +110,45 @@ def load_backend_settings(
 ) -> BackendSettings:
     values = _merge_env_values(env_file=env_file, overrides=overrides)
 
-    app_env = values.get("APP_ENV", "development").strip().lower()
+    app_env = values.get('APP_ENV', 'development').strip().lower()
     if app_env not in ALLOWED_APP_ENVS:
-        raise SettingsError("APP_ENV 只允许为 development、test、production")
+        raise SettingsError('APP_ENV 只允许为 development、test、production')
 
-    dashscope_api_key = values.get("DASHSCOPE_API_KEY", "").strip() or values.get("API_KEY", "").strip()
+    llm_mode = values.get('LLM_MODE', 'production').strip().lower() or 'production'
+    if llm_mode not in ALLOWED_LLM_MODES:
+        raise SettingsError('LLM_MODE 只允许为 production、acceptance')
+
+    dashscope_api_key = values.get('DASHSCOPE_API_KEY', '').strip() or values.get('API_KEY', '').strip()
     if not dashscope_api_key:
-        raise SettingsError("缺少必需环境变量: DASHSCOPE_API_KEY")
+        raise SettingsError('缺少必需环境变量: DASHSCOPE_API_KEY')
 
-    file_storage_path = _resolve_storage_path(_require(values, "FILE_STORAGE_PATH"))
+    file_storage_path = _resolve_storage_path(_require(values, 'FILE_STORAGE_PATH'))
 
-    chunk_size = _get_int(values, "CHUNK_SIZE", 800)
-    chunk_overlap = _get_int(values, "CHUNK_OVERLAP", 150)
+    chunk_size = _get_int(values, 'CHUNK_SIZE', 800)
+    chunk_overlap = _get_int(values, 'CHUNK_OVERLAP', 150)
     if chunk_overlap >= chunk_size:
-        raise SettingsError("CHUNK_OVERLAP 必须小于 CHUNK_SIZE")
+        raise SettingsError('CHUNK_OVERLAP 必须小于 CHUNK_SIZE')
 
-    vector_top_k = _get_int(values, "VECTOR_TOP_K", 12)
-    rerank_top_n = _get_int(values, "RERANK_TOP_N", 5)
+    vector_top_k = _get_int(values, 'VECTOR_TOP_K', 12)
+    rerank_top_n = _get_int(values, 'RERANK_TOP_N', 5)
     if rerank_top_n > vector_top_k:
-        raise SettingsError("RERANK_TOP_N 不能大于 VECTOR_TOP_K")
+        raise SettingsError('RERANK_TOP_N 不能大于 VECTOR_TOP_K')
 
     return BackendSettings(
         app_env=app_env,
-        app_name=values.get("APP_NAME", "RAG智能文档检索助手").strip() or "RAG智能文档检索助手",
-        api_prefix=values.get("API_PREFIX", "/api").strip() or "/api",
-        database_url=_require(values, "DATABASE_URL"),
-        redis_url=_require(values, "REDIS_URL"),
+        app_name=values.get('APP_NAME', 'RAG智能文档检索助手').strip() or 'RAG智能文档检索助手',
+        api_prefix=values.get('API_PREFIX', '/api').strip() or '/api',
+        database_url=_require(values, 'DATABASE_URL'),
+        redis_url=_require(values, 'REDIS_URL'),
         dashscope_api_key=dashscope_api_key,
-        llm_provider=values.get("LLM_PROVIDER", "dashscope").strip() or "dashscope",
-        llm_base_url=values.get("LLM_BASE_URL", "").strip() or None,
-        qwen_chat_model=values.get("QWEN_CHAT_MODEL", "qwen-plus").strip() or "qwen-plus",
-        embedding_model=values.get("DASHSCOPE_EMBEDDING_MODEL", "text-embedding-v1").strip()
-        or "text-embedding-v1",
-        reranker_model=values.get("RERANKER_MODEL", "BAAI/bge-reranker-base").strip()
-        or "BAAI/bge-reranker-base",
+        llm_provider=values.get('LLM_PROVIDER', 'dashscope').strip() or 'dashscope',
+        llm_mode=llm_mode,
+        llm_base_url=values.get('LLM_BASE_URL', '').strip() or None,
+        qwen_chat_model=values.get('QWEN_CHAT_MODEL', 'qwen-plus').strip() or 'qwen-plus',
+        embedding_model=values.get('DASHSCOPE_EMBEDDING_MODEL', 'text-embedding-v1').strip() or 'text-embedding-v1',
+        reranker_model=values.get('RERANKER_MODEL', 'gte-rerank-v2').strip() or 'gte-rerank-v2',
         file_storage_path=file_storage_path,
-        max_upload_size_mb=_get_int(values, "MAX_UPLOAD_SIZE_MB", 50),
+        max_upload_size_mb=_get_int(values, 'MAX_UPLOAD_SIZE_MB', 50),
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         vector_top_k=vector_top_k,

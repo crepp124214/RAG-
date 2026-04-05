@@ -25,6 +25,28 @@ describe("requestJson", () => {
     expect(payload.data).toEqual({ value: "ready" })
   })
 
+  it("GET 请求不会附加 JSON Content-Type，避免无必要的预检", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        message: "ok",
+        data: { value: "ready" },
+        error: null,
+      }),
+    })
+
+    vi.stubGlobal("fetch", fetchMock)
+
+    await requestJson<{ value: string }>("/api/health")
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const headers = new Headers(init.headers)
+
+    expect(headers.has("Content-Type")).toBe(false)
+  })
+
   it("在接口返回标准错误时抛出可读异常", async () => {
     vi.stubGlobal(
       "fetch",

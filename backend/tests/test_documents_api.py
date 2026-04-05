@@ -265,3 +265,42 @@ def test_upload_rolls_back_when_enqueue_fails(monkeypatch: pytest.MonkeyPatch) -
     assert response.status_code == 500
     assert document_count == 0
     assert task_count == 0
+
+
+def test_upload_commits_records_before_enqueue(monkeypatch: pytest.MonkeyPatch) -> None:
+    visibility: dict[str, bool] = {}
+
+    with create_initialized_test_client() as (client, _, _):
+        monkeypatch.setattr(
+            document_service_module,
+            "create_redis_client",
+            lambda redis_url: {"redis_url": redis_url},
+        )
+        monkeypatch.setattr(
+            document_service_module,
+            "create_queue",
+            lambda redis_client, queue_name=document_service_module.DEFAULT_QUEUE_NAME: {
+                "redis_client": redis_client,
+                "queue_name": queue_name,
+            },
+        )
+
+        def fake_enqueue(queue: object, func: object, *args: object) -> object:
+            document_id, task_id = args
+            with client.app.state.db_session_factory() as db_session:
+                visibility["document"] = db_session.get(Document, document_id) is not None
+                visibility["task"] = db_session.get(Task, task_id) is not None
+            return type("Job", (), {"id": "job-123"})()
+
+        monkeypatch.setattr(document_service_module, "enqueue_callable", fake_enqueue)
+
+        response = client.post(
+            "/api/documents/upload",
+            files={"file": ("demo.txt", b"document body", "text/plain")},
+        )
+
+    assert response.status_code == 200
+    assert visibility == {
+        "document": True,
+        "task": True,
+    }

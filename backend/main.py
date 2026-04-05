@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.error_handlers import register_error_handlers
 from backend.api.router import api_router
@@ -48,6 +49,16 @@ def create_app(settings: BackendSettings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.db_engine = None
     app.state.db_session_factory = None
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[],
+        allow_origin_regex=r"^https?://(127\.0\.0\.1|localhost)(:\d+)?$",
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["X-Request-ID"],
+    )
 
     @app.middleware("http")
     async def attach_request_id(request: Request, call_next):
