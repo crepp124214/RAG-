@@ -50,6 +50,9 @@ def get_document(
             storage_path=document.storage_path,
             has_visual_assets=visual_asset_count > 0,
             visual_asset_count=visual_asset_count,
+            has_graph=document.graph_relation_count > 0,
+            graph_status=document.graph_status,
+            graph_relation_count=document.graph_relation_count,
             created_at=document.created_at.isoformat(),
             updated_at=document.updated_at.isoformat(),
         ).model_dump(),
@@ -58,8 +61,9 @@ def get_document(
 
 @router.delete("/{document_id}")
 def remove_document(
+    request: Request,
     document_id: str,
     db_session: Session = Depends(get_db_session),
 ) -> dict:
-    delete_document(db_session, document_id)
+    delete_document(db_session, document_id, settings=request.app.state.settings)
     return success_response(message="文档删除成功")

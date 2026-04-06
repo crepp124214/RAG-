@@ -3,6 +3,7 @@ from __future__ import annotations
 from sqlalchemy import select
 
 from backend.app.models import Chunk, Document
+from backend.app.services.graph_service import GraphEvidence
 from backend.app.services.retrieval_service import RetrievalService
 from backend.infrastructure.database import create_database_engine, create_session_factory, initialize_database
 from backend.infrastructure.vector.store import update_chunk_embedding
@@ -20,6 +21,19 @@ class FakeRerankerClient:
 
     def rerank(self, *, query: str, documents: list[str], top_n: int) -> list[int]:
         return self.indexes[:top_n]
+
+
+class FakeGraphStore:
+    def __init__(self, evidence: list[GraphEvidence], *, error: Exception | None = None) -> None:
+        self.evidence = evidence
+        self.error = error
+        self.queries: list[tuple[str, int]] = []
+
+    def query_relations(self, *, query: str, limit: int) -> list[GraphEvidence]:
+        self.queries.append((query, limit))
+        if self.error is not None:
+            raise self.error
+        return self.evidence[:limit]
 
 
 def test_retrieve_returns_reranked_chunks_with_document_names() -> None:
@@ -199,3 +213,114 @@ def test_retrieve_preserves_visual_chunk_metadata() -> None:
     assert results[0].source_type == "image"
     assert results[0].asset_label == "第 3 页图片 1"
     assert results[0].preview_available is True
+
+
+def test_retrieve_merges_graph_evidence_for_relationship_queries() -> None:
+    temp_dir = create_workspace_temp_dir("retrieval-graph")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'graph.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+
+    with session_factory() as db_session:
+        document = Document(
+            name="architecture.txt",
+            file_type="txt",
+            status="READY",
+            storage_path=str(temp_dir / "architecture.txt"),
+        )
+        db_session.add(document)
+        db_session.flush()
+
+        chunk = Chunk(
+            document_id=document.id,
+            chunk_index=0,
+            content="A 服务依赖 B 服务。",
+            source_type="text",
+            page_number=1,
+        )
+        db_session.add(chunk)
+        db_session.flush()
+        update_chunk_embedding(db_session, chunk.id, [1.0, 0.0])
+        db_session.commit()
+
+        graph_store = FakeGraphStore(
+            [
+                GraphEvidence(
+                    relation_id="rel-1",
+                    document_id=document.id,
+                    document_name="",
+                    chunk_id=chunk.id,
+                    content="A -> 依赖 -> B",
+                    page_number=1,
+                    relation_label="依赖",
+                    entity_path="A -> B",
+                    score=0.98,
+                )
+            ]
+        )
+
+    service = RetrievalService(
+        embedding_client=FakeEmbeddingClient(),
+        reranker_client=FakeRerankerClient([1, 0]),
+        graph_store=graph_store,
+        vector_top_k=12,
+        rerank_top_n=2,
+    )
+
+    with session_factory() as db_session:
+        results = service.retrieve(db_session, query="A 和 B 之间是什么关系？")
+
+    engine.dispose()
+
+    assert len(results) == 2
+    assert graph_store.queries == [("A 和 B 之间是什么关系？", 2)]
+    assert results[0].source_type == "graph"
+    assert results[0].document_name == "architecture.txt"
+    assert results[0].relation_label == "依赖"
+    assert results[0].entity_path == "A -> B"
+    assert results[1].source_type == "text"
+
+
+def test_retrieve_falls_back_to_vector_when_graph_query_fails() -> None:
+    temp_dir = create_workspace_temp_dir("retrieval-graph-fallback")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'graph-fallback.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+
+    with session_factory() as db_session:
+        document = Document(
+            name="architecture.txt",
+            file_type="txt",
+            status="READY",
+            storage_path=str(temp_dir / "architecture.txt"),
+        )
+        db_session.add(document)
+        db_session.flush()
+
+        chunk = Chunk(
+            document_id=document.id,
+            chunk_index=0,
+            content="A 服务依赖 B 服务。",
+            source_type="text",
+            page_number=1,
+        )
+        db_session.add(chunk)
+        db_session.flush()
+        update_chunk_embedding(db_session, chunk.id, [1.0, 0.0])
+        db_session.commit()
+
+    service = RetrievalService(
+        embedding_client=FakeEmbeddingClient(),
+        reranker_client=FakeRerankerClient([0]),
+        graph_store=FakeGraphStore([], error=RuntimeError("neo4j down")),
+        vector_top_k=12,
+        rerank_top_n=1,
+    )
+
+    with session_factory() as db_session:
+        results = service.retrieve(db_session, query="A 和 B 的关系是什么？")
+
+    engine.dispose()
+
+    assert len(results) == 1
+    assert results[0].source_type == "text"

@@ -41,6 +41,10 @@ class BackendSettings:
     multimodal_enabled: bool
     max_visual_assets_per_document: int
     visual_caption_timeout_seconds: float
+    neo4j_uri: str | None
+    neo4j_username: str | None
+    neo4j_password: str | None
+    graph_query_limit: int
     file_storage_path: Path
     max_upload_size_mb: int
     chunk_size: int
@@ -192,6 +196,10 @@ def load_backend_settings(
         multimodal_enabled=_get_bool(values, 'MULTIMODAL_ENABLED', True),
         max_visual_assets_per_document=_get_int(values, 'MAX_VISUAL_ASSETS_PER_DOCUMENT', 8),
         visual_caption_timeout_seconds=_get_float(values, 'VISUAL_CAPTION_TIMEOUT_SECONDS', 12.0),
+        neo4j_uri=values.get('NEO4J_URI', '').strip() or None,
+        neo4j_username=values.get('NEO4J_USERNAME', '').strip() or None,
+        neo4j_password=values.get('NEO4J_PASSWORD', '').strip() or None,
+        graph_query_limit=_get_int(values, 'GRAPH_QUERY_LIMIT', 5),
         file_storage_path=file_storage_path,
         max_upload_size_mb=_get_int(values, 'MAX_UPLOAD_SIZE_MB', 50),
         chunk_size=chunk_size,

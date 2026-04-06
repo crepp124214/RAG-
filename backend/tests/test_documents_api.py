@@ -157,6 +157,9 @@ def test_get_document_returns_expected_payload(monkeypatch: pytest.MonkeyPatch) 
     assert payload["data"]["status"] == "UPLOADED"
     assert payload["data"]["has_visual_assets"] is False
     assert payload["data"]["visual_asset_count"] == 0
+    assert payload["data"]["has_graph"] is False
+    assert payload["data"]["graph_status"] == "NOT_STARTED"
+    assert payload["data"]["graph_relation_count"] == 0
     assert isinstance(payload["data"]["created_at"], str)
     assert isinstance(payload["data"]["updated_at"], str)
 
@@ -206,6 +209,44 @@ def test_get_task_returns_not_found_for_missing_task() -> None:
 
 def test_delete_document_removes_database_records_and_source_file(monkeypatch: pytest.MonkeyPatch) -> None:
     patch_document_queue(monkeypatch)
+
+    with create_initialized_test_client() as (client, _, _):
+        upload_response = client.post(
+            "/api/documents/upload",
+            files={"file": ("demo.txt", b"document body", "text/plain")},
+        )
+        document_id = upload_response.json()["data"]["document_id"]
+        task_id = upload_response.json()["data"]["task_id"]
+
+        document_response = client.get(f"/api/documents/{document_id}")
+        storage_path = Path(document_response.json()["data"]["storage_path"])
+
+        response = client.delete(f"/api/documents/{document_id}")
+
+        with client.app.state.db_session_factory() as db_session:
+            stored_document = db_session.get(Document, document_id)
+            stored_task = db_session.get(Task, task_id)
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+    assert stored_document is None
+    assert stored_task is None
+    assert not storage_path.exists()
+
+
+def test_delete_document_continues_when_graph_cleanup_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_document_queue(monkeypatch)
+
+    class FailingGraphStore:
+        def delete_document_graph(self, *, document_id: str) -> None:
+            del document_id
+            raise RuntimeError("neo4j unavailable")
+
+    monkeypatch.setattr(
+        document_service_module,
+        "create_graph_store",
+        lambda settings: FailingGraphStore(),
+    )
 
     with create_initialized_test_client() as (client, _, _):
         upload_response = client.post(

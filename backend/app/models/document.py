@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import String, Text
+from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.models.base import Base, TimestampMixin, generate_id
@@ -14,6 +14,8 @@ class Document(TimestampMixin, Base):
     file_type: Mapped[str] = mapped_column(String(32), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     storage_path: Mapped[str] = mapped_column(Text, nullable=False)
+    graph_status: Mapped[str] = mapped_column(String(32), nullable=False, default="NOT_STARTED")
+    graph_relation_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     tasks = relationship("Task", back_populates="document", cascade="all, delete-orphan")
     chunks = relationship("Chunk", back_populates="document", cascade="all, delete-orphan")

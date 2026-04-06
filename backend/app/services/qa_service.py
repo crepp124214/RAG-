@@ -120,10 +120,16 @@ class KnowledgeBaseQAService:
         lines: list[str] = []
         for index, citation in enumerate(citations, start=1):
             location = f"第 {citation.page_number} 页" if citation.page_number is not None else "页码未知"
-            source_hint = "视觉内容" if citation.source_type != "text" else "文本内容"
+            if citation.source_type == "graph":
+                source_hint = "图谱关系"
+            elif citation.source_type != "text":
+                source_hint = "视觉内容"
+            else:
+                source_hint = "文本内容"
             asset_hint = f"；标记：{citation.asset_label}" if citation.asset_label else ""
+            graph_hint = f"；关系：{citation.entity_path}" if citation.entity_path else ""
             lines.append(
-                f"[{index}] 文档：{citation.document_name}；类型：{source_hint}；位置：{location}{asset_hint}；内容：{citation.content}"
+                f"[{index}] 文档：{citation.document_name}；类型：{source_hint}；位置：{location}{asset_hint}{graph_hint}；内容：{citation.content}"
             )
         return "\n".join(lines)
 

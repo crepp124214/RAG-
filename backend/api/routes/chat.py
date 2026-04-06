@@ -29,6 +29,7 @@ from backend.app.services.chat_service import ChatService
 from backend.app.services.qa_service import KnowledgeBaseQAService
 from backend.app.services.retrieval_service import RetrievalService
 from backend.app.tools import DocumentLookupTool, ToolOrchestrator, ToolRegistry, WebSearchTool
+from backend.infrastructure.graph import create_graph_store
 from backend.infrastructure.llm import create_chat_client, create_embedding_client, create_reranker_client
 from backend.infrastructure.search import create_search_provider
 
@@ -47,6 +48,7 @@ def get_chat_service(request: Request) -> ChatService:
     retrieval_service = RetrievalService(
         embedding_client=create_embedding_client(settings),
         reranker_client=create_reranker_client(settings),
+        graph_store=create_graph_store(settings),
         vector_top_k=settings.vector_top_k,
         rerank_top_n=settings.rerank_top_n,
     )
@@ -150,6 +152,8 @@ def query_chat(
                     source_type=item.source_type,
                     asset_label=item.asset_label,
                     preview_available=item.preview_available,
+                    relation_label=item.relation_label,
+                    entity_path=item.entity_path,
                 )
                 for item in qa_result.citations
             ],

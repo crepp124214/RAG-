@@ -12,6 +12,7 @@ from backend.app.repositories.document_repository import DocumentRepository
 from backend.app.repositories.task_repository import TaskRepository
 from backend.app.settings import BackendSettings
 from backend.app.tasks.document_tasks import enqueue_document_ingestion
+from backend.infrastructure.graph import create_graph_store
 from backend.infrastructure.observability import log_event
 from backend.infrastructure.queue import (
     DEFAULT_QUEUE_NAME,
@@ -119,12 +120,23 @@ def get_task_detail(db_session: Session, task_id: str) -> Task:
     return task
 
 
-def delete_document(db_session: Session, document_id: str) -> None:
+def delete_document(db_session: Session, document_id: str, *, settings: BackendSettings | None = None) -> None:
     document = DocumentRepository(db_session).get_by_id(document_id)
     if document is None:
         raise AppError("文档不存在", code="document_not_found", status_code=404)
 
     storage_path = document.storage_path
+    if settings is not None:
+        try:
+            create_graph_store(settings).delete_document_graph(document_id=document_id)
+        except Exception as exc:
+            log_event(
+                logger,
+                logging.WARNING,
+                "document.graph_cleanup_failed",
+                document_id=document_id,
+                error=str(exc),
+            )
     db_session.delete(document)
     db_session.commit()
 

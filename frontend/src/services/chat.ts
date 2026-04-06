@@ -27,6 +27,8 @@ export interface Citation {
   source_type: string
   asset_label: string | null
   preview_available: boolean
+  relation_label?: string | null
+  entity_path?: string | null
 }
 
 export interface ToolCall {

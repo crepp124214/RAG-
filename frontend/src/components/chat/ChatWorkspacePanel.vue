@@ -35,7 +35,13 @@ function getToolCallSummary(toolCall: {
 function isVisualCitation(citation: {
   source_type: string
 }): boolean {
-  return citation.source_type !== "text"
+  return citation.source_type === "image"
+}
+
+function isGraphCitation(citation: {
+  source_type: string
+}): boolean {
+  return citation.source_type === "graph"
 }
 
 function getCitationLabel(citation: {
@@ -44,6 +50,10 @@ function getCitationLabel(citation: {
 }): string {
   if (citation.source_type === "text") {
     return "文本引用"
+  }
+
+  if (citation.source_type === "graph") {
+    return "图谱引用"
   }
 
   return citation.asset_label ?? "视觉引用"
@@ -127,14 +137,17 @@ async function send() {
           class="citation-list"
         >
           <div
-            v-for="citation in message.citations"
-            :key="citation.chunk_id"
+            v-for="(citation, citationIndex) in message.citations"
+            :key="`${citation.source_type}-${citation.chunk_id}-${citationIndex}`"
             class="citation-card"
-            :class="{ visual: isVisualCitation(citation) }"
+            :class="{ visual: isVisualCitation(citation), graph: isGraphCitation(citation) }"
           >
             <strong>{{ citation.document_name }}</strong>
             <span class="citation-type">{{ getCitationLabel(citation) }}</span>
             <span v-if="citation.page_number !== null">第 {{ citation.page_number }} 页</span>
+            <span v-if="citation.source_type === 'graph' && citation.entity_path">
+              实体路径：{{ citation.entity_path }}
+            </span>
             <p>{{ citation.content }}</p>
           </div>
         </div>
@@ -258,6 +271,11 @@ async function send() {
   border-color: rgba(249, 115, 22, 0.2);
 }
 
+.citation-card.graph {
+  background: rgba(239, 246, 255, 0.95);
+  border-color: rgba(59, 130, 246, 0.22);
+}
+
 .citation-card span,
 .composer-actions span {
   color: #64748b;
@@ -267,6 +285,10 @@ async function send() {
 .citation-type {
   color: #9a3412;
   font-weight: 600;
+}
+
+.citation-card.graph .citation-type {
+  color: #1d4ed8;
 }
 
 .citation-card p {
