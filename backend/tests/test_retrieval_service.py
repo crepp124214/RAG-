@@ -100,6 +100,58 @@ def test_retrieve_returns_empty_list_when_no_chunks_exist() -> None:
     assert results == []
 
 
+def test_retrieve_ignores_chunks_with_mismatched_embedding_dimensions() -> None:
+    temp_dir = create_workspace_temp_dir("retrieval-mismatch")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'mismatch.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+
+    with session_factory() as db_session:
+        document = Document(
+            name="mixed.txt",
+            file_type="txt",
+            status="READY",
+            storage_path=str(temp_dir / "mixed.txt"),
+        )
+        db_session.add(document)
+        db_session.flush()
+
+        matched_chunk = Chunk(
+            document_id=document.id,
+            chunk_index=0,
+            content="matched",
+            source_type="text",
+            page_number=1,
+        )
+        mismatched_chunk = Chunk(
+            document_id=document.id,
+            chunk_index=1,
+            content="mismatched",
+            source_type="text",
+            page_number=2,
+        )
+        db_session.add_all([matched_chunk, mismatched_chunk])
+        db_session.flush()
+        update_chunk_embedding(db_session, matched_chunk.id, [1.0, 0.0])
+        update_chunk_embedding(db_session, mismatched_chunk.id, [1.0, 0.0, 0.0])
+        db_session.commit()
+
+    service = RetrievalService(
+        embedding_client=FakeEmbeddingClient(),
+        reranker_client=FakeRerankerClient([0]),
+        vector_top_k=12,
+        rerank_top_n=1,
+    )
+
+    with session_factory() as db_session:
+        results = service.retrieve(db_session, query="demo query")
+
+    engine.dispose()
+
+    assert len(results) == 1
+    assert results[0].content == "matched"
+
+
 def test_retrieve_preserves_visual_chunk_metadata() -> None:
     temp_dir = create_workspace_temp_dir("retrieval-visual")
     engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'visual.sqlite3').resolve()}")

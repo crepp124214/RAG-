@@ -141,7 +141,7 @@ cd frontend && npm run lint
 
 当前已经实际验证通过：
 
-- 后端测试：`119 passed`
+- 后端测试：`123 passed`
 - 前端测试：`16 passed`
 - 前端 `typecheck`：通过
 - 前端 `lint`：通过

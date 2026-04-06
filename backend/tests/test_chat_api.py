@@ -214,6 +214,16 @@ def test_create_session_endpoint_returns_minimal_payload() -> None:
     assert payload["data"]["title"] == "新会话"
 
 
+def test_create_session_endpoint_works_without_search_api_key() -> None:
+    with create_initialized_test_client(overrides={"SEARCH_API_KEY": ""}) as (client, _, _):
+        response = client.post("/api/chat/sessions")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert payload["data"]["title"] == "新会话"
+
+
 def test_list_sessions_endpoint_returns_recent_sessions() -> None:
     fake_service = FakeChatService()
 

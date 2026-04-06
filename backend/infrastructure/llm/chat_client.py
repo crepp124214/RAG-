@@ -29,7 +29,7 @@ class QwenChatClient:
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 stream=True,
-                incremental_output=False,
+                incremental_output=True,
             ),
         )
 

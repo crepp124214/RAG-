@@ -70,7 +70,9 @@ function Get-ServiceProcess([string]$Name) {
 
     $process = Get-Process -Id ([int]$rawPid) -ErrorAction SilentlyContinue
     if ($null -eq $process) {
-        Remove-Item $pidFile -Force
+        if (Test-Path $pidFile) {
+            Remove-Item $pidFile -Force
+        }
     }
     return $process
 }

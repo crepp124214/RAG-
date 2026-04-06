@@ -70,17 +70,19 @@ def _search_similar_chunks_postgresql(
     query_embedding: list[float],
     limit: int,
 ) -> list[ChunkSimilarityResult]:
+    query_dimensions = len(query_embedding)
     distance_expression = Chunk.embedding.op("<=>", return_type=Float)(query_embedding)
     score_expression = (1.0 - distance_expression).label("score")
     statement = (
         select(Chunk, score_expression)
         .where(Chunk.embedding.is_not(None))
+        .where(text("vector_dims(embedding) = :query_dimensions"))
         .order_by(distance_expression)
         .limit(limit)
     )
 
     results: list[ChunkSimilarityResult] = []
-    for chunk, score in db_session.execute(statement):
+    for chunk, score in db_session.execute(statement, {"query_dimensions": query_dimensions}):
         results.append(
             ChunkSimilarityResult(
                 chunk_id=chunk.id,
@@ -107,6 +109,8 @@ def _search_similar_chunks_sqlite(
 
     for chunk in db_session.scalars(statement):
         if chunk.embedding is None:
+            continue
+        if len(chunk.embedding) != len(query_embedding):
             continue
         scored_chunks.append(
             ChunkSimilarityResult(

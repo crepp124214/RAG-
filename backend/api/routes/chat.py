@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Generator
 
 from fastapi import APIRouter, Depends, Request
@@ -23,6 +24,7 @@ from backend.api.schemas.chat import (
     SessionListItemData,
 )
 from backend.api.schemas.response import success_response
+from backend.app.exceptions import AppError
 from backend.app.services.chat_service import ChatService
 from backend.app.services.qa_service import KnowledgeBaseQAService
 from backend.app.services.retrieval_service import RetrievalService
@@ -32,6 +34,7 @@ from backend.infrastructure.search import create_search_provider
 
 
 router = APIRouter(prefix='/chat', tags=['chat'])
+logger = logging.getLogger(__name__)
 
 
 def _format_sse_event(*, event: str, data: dict) -> str:
@@ -48,8 +51,15 @@ def get_chat_service(request: Request) -> ChatService:
         rerank_top_n=settings.rerank_top_n,
     )
     tool_registry = ToolRegistry()
-    tool_registry.register(WebSearchTool(search_provider=create_search_provider(settings)).definition())
     tool_registry.register(DocumentLookupTool().definition())
+    try:
+        tool_registry.register(WebSearchTool(search_provider=create_search_provider(settings)).definition())
+    except AppError as exc:
+        logger.warning(
+            "chat.web_search_disabled code=%s detail=%s",
+            exc.code,
+            exc.message,
+        )
     qa_service = KnowledgeBaseQAService(
         retrieval_service=retrieval_service,
         chat_client=chat_client,

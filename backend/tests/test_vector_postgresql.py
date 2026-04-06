@@ -6,9 +6,11 @@ from backend.infrastructure.vector.store import _search_similar_chunks_postgresq
 class StubSession:
     def __init__(self) -> None:
         self.statements = []
+        self.parameters = []
 
-    def execute(self, statement):
+    def execute(self, statement, params=None):
         self.statements.append(statement)
+        self.parameters.append(params)
         return []
 
 
@@ -20,3 +22,5 @@ def test_postgresql_vector_search_builds_distance_query_without_attribute_error(
     assert results == []
     assert len(db_session.statements) == 1
     assert "<=>" in str(db_session.statements[0])
+    assert "vector_dims(embedding) =" in str(db_session.statements[0])
+    assert db_session.parameters[0] == {"query_dimensions": 3}
