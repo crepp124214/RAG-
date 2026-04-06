@@ -39,7 +39,7 @@ def get_document(
     document_id: str,
     db_session: Session = Depends(get_db_session),
 ) -> dict:
-    document = get_document_detail(db_session, document_id)
+    document, visual_asset_count = get_document_detail(db_session, document_id)
     return success_response(
         message="获取文档详情成功",
         data=DocumentDetailData(
@@ -48,6 +48,8 @@ def get_document(
             file_type=document.file_type,
             status=document.status,
             storage_path=document.storage_path,
+            has_visual_assets=visual_asset_count > 0,
+            visual_asset_count=visual_asset_count,
             created_at=document.created_at.isoformat(),
             updated_at=document.updated_at.isoformat(),
         ).model_dump(),

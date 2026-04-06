@@ -14,6 +14,8 @@ from backend.api.schemas.chat import (
     ChatStreamEndData,
     ChatStreamErrorData,
     ChatStreamStartData,
+    ToolCallData,
+    ToolCallEventData,
     ChatStreamTokenData,
     CitationData,
     CreateSessionData,
@@ -24,7 +26,9 @@ from backend.api.schemas.response import success_response
 from backend.app.services.chat_service import ChatService
 from backend.app.services.qa_service import KnowledgeBaseQAService
 from backend.app.services.retrieval_service import RetrievalService
+from backend.app.tools import DocumentLookupTool, ToolOrchestrator, ToolRegistry, WebSearchTool
 from backend.infrastructure.llm import create_chat_client, create_embedding_client, create_reranker_client
+from backend.infrastructure.search import create_search_provider
 
 
 router = APIRouter(prefix='/chat', tags=['chat'])
@@ -36,15 +40,20 @@ def _format_sse_event(*, event: str, data: dict) -> str:
 
 def get_chat_service(request: Request) -> ChatService:
     settings = request.app.state.settings
+    chat_client = create_chat_client(settings)
     retrieval_service = RetrievalService(
         embedding_client=create_embedding_client(settings),
         reranker_client=create_reranker_client(settings),
         vector_top_k=settings.vector_top_k,
         rerank_top_n=settings.rerank_top_n,
     )
+    tool_registry = ToolRegistry()
+    tool_registry.register(WebSearchTool(search_provider=create_search_provider(settings)).definition())
+    tool_registry.register(DocumentLookupTool().definition())
     qa_service = KnowledgeBaseQAService(
         retrieval_service=retrieval_service,
-        chat_client=create_chat_client(settings),
+        chat_client=chat_client,
+        tool_orchestrator=ToolOrchestrator(registry=tool_registry, chat_client=chat_client),
     )
     return ChatService(qa_service=qa_service)
 
@@ -96,6 +105,8 @@ def list_messages(
                 session_id=message.session_id,
                 role=message.role,
                 content=message.content,
+                citations=[CitationData(**item) for item in (message.citations or [])],
+                tool_calls=[ToolCallData(**item) for item in (message.tool_calls or [])],
                 created_at=message.created_at.isoformat(),
                 updated_at=message.updated_at.isoformat(),
             ).model_dump()
@@ -126,9 +137,13 @@ def query_chat(
                     chunk_id=item.chunk_id,
                     content=item.content,
                     page_number=item.page_number,
+                    source_type=item.source_type,
+                    asset_label=item.asset_label,
+                    preview_available=item.preview_available,
                 )
                 for item in qa_result.citations
             ],
+            tool_calls=[ToolCallData(**item) for item in qa_result.tool_calls],
             user_message_id=user_message.id,
             assistant_message_id=assistant_message.id,
         ).model_dump(),
@@ -172,8 +187,29 @@ def stream_chat(
                     )
                     continue
 
+                if item.event == 'tool_call':
+                    yield _format_sse_event(
+                        event=item.event,
+                        data=ToolCallEventData(**item.data).model_dump(),
+                    )
+                    continue
+
+                if item.event == 'tool_result':
+                    yield _format_sse_event(
+                        event=item.event,
+                        data=ToolCallData(**item.data).model_dump(),
+                    )
+                    continue
+
                 if item.event == 'message_end':
-                    end_payload = ChatStreamEndData(citations=citations, **item.data)
+                    end_payload = ChatStreamEndData(
+                        citations=citations,
+                        tool_calls=[ToolCallData(**tool_call) for tool_call in item.data.get("tool_calls", [])],
+                        answer=item.data["answer"],
+                        user_message_id=item.data["user_message_id"],
+                        assistant_message_id=item.data["assistant_message_id"],
+                        session_id=item.data["session_id"],
+                    )
                     yield _format_sse_event(event=item.event, data=end_payload.model_dump())
                     continue
 

@@ -25,6 +25,8 @@ export interface DocumentListItem {
   name: string
   fileType: string
   documentStatus: string
+  hasVisualAssets: boolean
+  visualAssetCount: number
   taskStatus: string
   taskType: string
   errorMessage: string | null
@@ -77,6 +79,8 @@ function mergeDocumentDetail(
     name: document.name,
     fileType: document.file_type.toUpperCase(),
     documentStatus: document.status,
+    hasVisualAssets: document.has_visual_assets,
+    visualAssetCount: document.visual_asset_count,
     taskStatus: task.status,
     taskType: task.task_type,
     errorMessage: task.error_message,

@@ -14,6 +14,8 @@ class DocumentDetailData(BaseModel):
     file_type: str
     status: str
     storage_path: str
+    has_visual_assets: bool
+    visual_asset_count: int
     created_at: str
     updated_at: str
 

@@ -25,6 +25,22 @@ def _generate_session_title(query: str, *, max_length: int = 40) -> str:
     return normalized if len(normalized) <= max_length else f"{normalized[:max_length].rstrip()}..."
 
 
+def _serialize_citations(citations: list[Any]) -> list[dict[str, Any]]:
+    return [
+        {
+            "document_id": citation.document_id,
+            "document_name": citation.document_name,
+            "chunk_id": citation.chunk_id,
+            "content": citation.content,
+            "page_number": citation.page_number,
+            "source_type": citation.source_type,
+            "asset_label": citation.asset_label,
+            "preview_available": citation.preview_available,
+        }
+        for citation in citations
+    ]
+
+
 @dataclass(frozen=True)
 class ChatStreamEvent:
     event: str
@@ -67,11 +83,18 @@ class ChatService:
 
         try:
             user_message = message_repository.add(
-                Message(session_id=session_id, role="user", content=query),
+                Message(session_id=session_id, role="user", content=query, citations=[], tool_calls=[]),
             )
             qa_result = self.qa_service.ask(db_session, query=query)
+            tool_calls = getattr(qa_result, "tool_calls", [])
             assistant_message = message_repository.add(
-                Message(session_id=session_id, role="assistant", content=qa_result.answer),
+                Message(
+                    session_id=session_id,
+                    role="assistant",
+                    content=qa_result.answer,
+                    citations=_serialize_citations(qa_result.citations),
+                    tool_calls=tool_calls,
+                ),
             )
 
             db_session.commit()
@@ -87,6 +110,7 @@ class ChatService:
                 user_message_id=user_message.id,
                 assistant_message_id=assistant_message.id,
                 citation_count=len(qa_result.citations),
+                tool_count=len(tool_calls),
             )
             return qa_result, user_message, assistant_message
         except Exception:
@@ -117,7 +141,7 @@ class ChatService:
             db_session.add(session)
 
         try:
-            citations, answer_stream = self.qa_service.stream_ask(db_session, query=query)
+            citations, tool_calls, answer_stream = self.qa_service.stream_ask(db_session, query=query)
 
             yield ChatStreamEvent(event="message_start", data={"session_id": session_id})
 
@@ -130,8 +154,21 @@ class ChatService:
                         "chunk_id": citation.chunk_id,
                         "content": citation.content,
                         "page_number": citation.page_number,
+                        "source_type": citation.source_type,
+                        "asset_label": citation.asset_label,
+                        "preview_available": citation.preview_available,
                     },
                 )
+
+            for tool_call in tool_calls:
+                yield ChatStreamEvent(
+                    event="tool_call",
+                    data={
+                        "tool_name": tool_call["tool_name"],
+                        "arguments": tool_call["arguments"],
+                    },
+                )
+                yield ChatStreamEvent(event="tool_result", data=tool_call)
 
             answer_parts: list[str] = []
             for token in answer_stream:
@@ -145,10 +182,16 @@ class ChatService:
                 raise AppError("问答生成结果为空", code="chat_generation_empty", status_code=502)
 
             user_message = message_repository.add(
-                Message(session_id=session_id, role="user", content=query),
+                Message(session_id=session_id, role="user", content=query, citations=[], tool_calls=[]),
             )
             assistant_message = message_repository.add(
-                Message(session_id=session_id, role="assistant", content=answer),
+                Message(
+                    session_id=session_id,
+                    role="assistant",
+                    content=answer,
+                    citations=_serialize_citations(citations),
+                    tool_calls=tool_calls,
+                ),
             )
 
             db_session.commit()
@@ -164,12 +207,15 @@ class ChatService:
                 user_message_id=user_message.id,
                 assistant_message_id=assistant_message.id,
                 citation_count=len(citations),
+                tool_count=len(tool_calls),
             )
 
             yield ChatStreamEvent(
                 event="message_end",
                 data={
                     "answer": answer,
+                    "citations": _serialize_citations(citations),
+                    "tool_calls": tool_calls,
                     "user_message_id": user_message.id,
                     "assistant_message_id": assistant_message.id,
                     "session_id": session_id,

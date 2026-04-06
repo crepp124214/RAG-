@@ -17,6 +17,9 @@ class RetrievedChunk:
     chunk_index: int
     content: str
     page_number: int | None
+    source_type: str
+    asset_label: str | None
+    preview_available: bool
     score: float
 
 
@@ -56,6 +59,9 @@ class RetrievalService:
                 chunk_index=item.chunk_index,
                 content=item.content,
                 page_number=item.page_number,
+                source_type=item.source_type,
+                asset_label=item.asset_label,
+                preview_available=item.preview_available,
                 score=item.score,
             )
             for item in selected_candidates

@@ -17,6 +17,9 @@ class ChunkSimilarityResult:
     chunk_index: int
     content: str
     page_number: int | None
+    source_type: str
+    asset_label: str | None
+    preview_available: bool
     score: float
 
 
@@ -85,6 +88,9 @@ def _search_similar_chunks_postgresql(
                 chunk_index=chunk.chunk_index,
                 content=chunk.content,
                 page_number=chunk.page_number,
+                source_type=chunk.source_type,
+                asset_label=chunk.asset_label,
+                preview_available=bool(chunk.asset_path),
                 score=float(score),
             ),
         )
@@ -109,6 +115,9 @@ def _search_similar_chunks_sqlite(
                 chunk_index=chunk.chunk_index,
                 content=chunk.content,
                 page_number=chunk.page_number,
+                source_type=chunk.source_type,
+                asset_label=chunk.asset_label,
+                preview_available=bool(chunk.asset_path),
                 score=_cosine_similarity(query_embedding, chunk.embedding),
             ),
         )

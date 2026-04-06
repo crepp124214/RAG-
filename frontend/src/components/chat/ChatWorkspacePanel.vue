@@ -8,6 +8,47 @@ const draft = ref("")
 
 const canSend = computed(() => draft.value.trim().length > 0 && !chatStore.isSending)
 
+function getToolCallStatusLabel(status: string): string {
+  if (status === "pending") {
+    return "调用中"
+  }
+
+  if (status === "success") {
+    return "调用成功"
+  }
+
+  return "调用失败"
+}
+
+function getToolCallSummary(toolCall: {
+  result_summary: string | null
+  error_detail: string | null
+  status: string
+}): string {
+  if (toolCall.status === "pending") {
+    return "工具调用中..."
+  }
+
+  return toolCall.result_summary ?? toolCall.error_detail ?? "工具调用已完成。"
+}
+
+function isVisualCitation(citation: {
+  source_type: string
+}): boolean {
+  return citation.source_type !== "text"
+}
+
+function getCitationLabel(citation: {
+  source_type: string
+  asset_label: string | null
+}): string {
+  if (citation.source_type === "text") {
+    return "文本引用"
+  }
+
+  return citation.asset_label ?? "视觉引用"
+}
+
 async function send() {
   if (!canSend.value) {
     return
@@ -63,6 +104,25 @@ async function send() {
         <p class="message-content">{{ message.content || "..." }}</p>
 
         <div
+          v-if="message.role === 'assistant' && message.toolCalls.length > 0"
+          class="tool-call-list"
+        >
+          <div
+            v-for="(toolCall, index) in message.toolCalls"
+            :key="`${message.id}-tool-${index}`"
+            class="tool-call-card"
+          >
+            <div class="tool-call-header">
+              <strong>{{ toolCall.tool_name }}</strong>
+              <span>{{ getToolCallStatusLabel(toolCall.status) }}</span>
+            </div>
+            <p class="tool-call-summary">
+              {{ getToolCallSummary(toolCall) }}
+            </p>
+          </div>
+        </div>
+
+        <div
           v-if="message.role === 'assistant' && message.citations.length > 0"
           class="citation-list"
         >
@@ -70,8 +130,10 @@ async function send() {
             v-for="citation in message.citations"
             :key="citation.chunk_id"
             class="citation-card"
+            :class="{ visual: isVisualCitation(citation) }"
           >
             <strong>{{ citation.document_name }}</strong>
+            <span class="citation-type">{{ getCitationLabel(citation) }}</span>
             <span v-if="citation.page_number !== null">第 {{ citation.page_number }} 页</span>
             <p>{{ citation.content }}</p>
           </div>
@@ -150,6 +212,38 @@ async function send() {
   margin-top: 14px;
 }
 
+.tool-call-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tool-call-card {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(236, 253, 245, 0.9);
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  display: grid;
+  gap: 4px;
+}
+
+.tool-call-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tool-call-header span {
+  color: #166534;
+  font-size: 12px;
+}
+
+.tool-call-summary {
+  margin: 0;
+  color: #334155;
+  line-height: 1.6;
+}
+
 .citation-card {
   padding: 10px 12px;
   border-radius: 14px;
@@ -159,10 +253,20 @@ async function send() {
   gap: 4px;
 }
 
+.citation-card.visual {
+  background: rgba(255, 247, 237, 0.92);
+  border-color: rgba(249, 115, 22, 0.2);
+}
+
 .citation-card span,
 .composer-actions span {
   color: #64748b;
   font-size: 12px;
+}
+
+.citation-type {
+  color: #9a3412;
+  font-weight: 600;
 }
 
 .citation-card p {

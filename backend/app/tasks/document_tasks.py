@@ -5,9 +5,10 @@ import logging
 from backend.app.orchestrators.document_ingestion import DocumentIngestionOrchestrator
 from backend.app.services.chunking_service import DocumentChunkingService
 from backend.app.services.parser_service import DocumentParserService
+from backend.app.services.visual_asset_service import PdfVisualAssetService
 from backend.app.settings import get_backend_settings
 from backend.infrastructure.database import create_database_engine, create_session_factory
-from backend.infrastructure.llm import create_embedding_client
+from backend.infrastructure.llm import create_embedding_client, create_vision_caption_client
 from backend.infrastructure.observability import log_event
 
 
@@ -36,6 +37,10 @@ def enqueue_document_ingestion(document_id: str, task_id: str) -> dict[str, str 
                 chunk_overlap=settings.chunk_overlap,
             ),
             embedding_client=create_embedding_client(settings),
+            visual_asset_service=PdfVisualAssetService(),
+            vision_caption_client=create_vision_caption_client(settings),
+            multimodal_enabled=settings.multimodal_enabled,
+            max_visual_assets_per_document=settings.max_visual_assets_per_document,
         )
         result = orchestrator.process(document_id=document_id, task_id=task_id)
         log_event(

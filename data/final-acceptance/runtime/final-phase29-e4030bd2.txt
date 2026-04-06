@@ -1,0 +1,3 @@
+Phase 29 final acceptance text sample e4030bd2
+The system supports document upload and task tracking.
+The system supports citation-based answers and session recovery.

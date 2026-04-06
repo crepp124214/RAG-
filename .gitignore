@@ -179,6 +179,7 @@ node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/coverage/
+.dev/
 
 # OS generated files
 .DS_Store

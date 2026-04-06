@@ -34,8 +34,9 @@ class DocumentChunkingService:
         *,
         document_id: str,
         source_type: str = "text",
+        preserve_documents: bool = False,
     ) -> list[ChunkPayload]:
-        split_documents = self.text_splitter.split_documents(documents)
+        split_documents = documents if preserve_documents else self.text_splitter.split_documents(documents)
 
         chunks: list[ChunkPayload] = []
         for index, document in enumerate(split_documents):

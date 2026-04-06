@@ -1,0 +1,78 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - paragraph [ref=e6]: 第一阶段最小可运行产品
+      - heading "RAG 智能文档检索助手" [level=1] [ref=e7]
+    - generic [ref=e8]:
+      - generic [ref=e9]: 后端健康状态
+      - strong [ref=e10]: RAG智能文档检索助手 / ok
+  - alert [ref=e11]:
+    - img [ref=e13]
+    - generic [ref=e15]:
+      - generic [ref=e16]: 后端连接成功
+      - paragraph [ref=e17]: 服务状态：ok，环境：development
+  - main [ref=e18]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - heading "会话列表" [level=2] [ref=e22]
+          - text: 按最近活跃排序，支持自动生成首轮标题
+        - button "新建会话" [active] [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: 新建会话
+      - generic [ref=e25]:
+        - button "新会话 2026-04-05T16:23:15.925912+00:00" [ref=e163] [cursor=pointer]:
+          - strong [ref=e164]: 新会话
+          - generic [ref=e165]: 2026-04-05T16:23:15.925912+00:00
+        - button "今天最新消息是什么 2026-04-05T14:57:50.706878+00:00" [ref=e26] [cursor=pointer]:
+          - strong [ref=e27]: 今天最新消息是什么
+          - generic [ref=e28]: 2026-04-05T14:57:50.706878+00:00
+    - generic [ref=e29]:
+      - generic [ref=e31]:
+        - heading "聊天工作台" [level=2] [ref=e32]
+        - text: 当前会话：新会话
+      - generic [ref=e166]:
+        - img [ref=e168]
+        - paragraph [ref=e185]: 发送第一条问题后，这里会展示知识库回答和引用。
+      - generic [ref=e34]:
+        - textbox "请输入你想从知识库中查询的问题。" [ref=e36]
+        - generic [ref=e37]:
+          - generic [ref=e38]: 按 Ctrl + Enter 发送
+          - button "发送问题" [disabled] [ref=e39]:
+            - generic [ref=e40]: 发送问题
+    - generic [ref=e42]:
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - heading "文档管理" [level=2] [ref=e46]
+            - text: 上传、查看并删除当前工作区的知识库文档
+          - button "上传文档" [ref=e47] [cursor=pointer]:
+            - generic [ref=e48]: 上传文档
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - generic [ref=e53]: 已跟踪 0 份
+              - generic [ref=e55]: 处理中 0 份
+            - generic [ref=e56]:
+              - img [ref=e58]
+              - paragraph [ref=e75]: 还没有已跟踪的文档，请先上传 PDF、DOCX 或 TXT 文件。
+          - generic [ref=e77]:
+            - img [ref=e79]
+            - paragraph [ref=e96]: 选中文档后，这里会显示详情、任务状态和失败原因。
+      - generic [ref=e97]:
+        - generic [ref=e99]:
+          - heading "任务状态" [level=2] [ref=e100]
+          - text: 基于当前已跟踪文档展示异步处理进展
+        - list [ref=e101]:
+          - listitem [ref=e102]:
+            - generic [ref=e103]: 已跟踪文档
+            - strong [ref=e104]: "0"
+          - listitem [ref=e105]:
+            - generic [ref=e106]: 处理中任务
+            - strong [ref=e107]: "0"
+          - listitem [ref=e108]:
+            - generic [ref=e109]: 最近状态
+            - strong [ref=e110]: 未选择
+          - listitem [ref=e111]:
+            - generic [ref=e112]: 最近文档
+            - strong [ref=e113]: 暂无
+        - paragraph [ref=e114]: 任务状态会在页面打开期间自动轮询；刷新后会从本地保存的文档清单恢复。
