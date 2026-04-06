@@ -1,11 +1,26 @@
 @echo off
+setlocal
 chcp 65001 >nul
-echo 正在启动RAG智能文档检索助手...
-echo 如果浏览器未自动打开，请手动访问显示的URL
-echo 按Ctrl+C停止应用
-echo ===================================================
-.
 
-streamlit run 页面开发.py
+set "COMMAND=%~1"
+if "%COMMAND%"=="" set "COMMAND=all"
 
-pause
+if /I "%COMMAND%"=="help" goto :help_success
+if /I "%COMMAND%"=="-h" goto :help_success
+if /I "%COMMAND%"=="--help" goto :help_success
+
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 %*
+exit /b %errorlevel%
+
+:help_success
+echo RAG developer entrypoint
+echo.
+echo Usage:
+echo   start.bat [dev^|all^|backend^|frontend^|worker^|stop^|status^|test^|check^|build^|coverage^|lint^|health^|clean^|help]
+echo.
+echo Examples:
+echo   start.bat
+echo   start.bat backend
+echo   start.bat test
+echo   start.bat stop all
+exit /b 0

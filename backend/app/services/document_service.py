@@ -3,10 +3,11 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from backend.app.exceptions import AppError
-from backend.app.models import Document, Task
+from backend.app.models import Chunk, Document, Task
 from backend.app.repositories.document_repository import DocumentRepository
 from backend.app.repositories.task_repository import TaskRepository
 from backend.app.settings import BackendSettings
@@ -98,11 +99,17 @@ def create_document_upload(
     return document, task
 
 
-def get_document_detail(db_session: Session, document_id: str) -> Document:
+def get_document_detail(db_session: Session, document_id: str) -> tuple[Document, int]:
     document = DocumentRepository(db_session).get_by_id(document_id)
     if document is None:
         raise AppError("文档不存在", code="document_not_found", status_code=404)
-    return document
+    statement = (
+        select(func.count(Chunk.id))
+        .where(Chunk.document_id == document_id)
+        .where(Chunk.source_type != "text")
+    )
+    visual_asset_count = int(db_session.scalar(statement) or 0)
+    return document, visual_asset_count
 
 
 def get_task_detail(db_session: Session, task_id: str) -> Task:
@@ -124,6 +131,12 @@ def delete_document(db_session: Session, document_id: str) -> None:
     file_path = Path(storage_path)
     if file_path.exists():
         file_path.unlink()
+    asset_dir = file_path.parent / f"{file_path.stem}_assets"
+    if asset_dir.exists():
+        for child in asset_dir.iterdir():
+            if child.is_file():
+                child.unlink()
+        asset_dir.rmdir()
 
     log_event(
         logger,

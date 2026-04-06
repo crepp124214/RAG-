@@ -57,14 +57,20 @@ def test_generate_raises_when_content_is_empty(monkeypatch: pytest.MonkeyPatch) 
 
 
 def test_stream_generate_yields_incremental_chunks(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "backend.infrastructure.llm.chat_client.Generation.call",
-        lambda **kwargs: iter(
+    captured = {}
+
+    def fake_call(**kwargs):
+        captured.update(kwargs)
+        return iter(
             [
                 FakeResponse(status_code=200, content="你好"),
                 FakeResponse(status_code=200, content="，世界"),
             ]
-        ),
+        )
+
+    monkeypatch.setattr(
+        "backend.infrastructure.llm.chat_client.Generation.call",
+        fake_call,
     )
 
     client = QwenChatClient(api_key="test-key", model="qwen-plus")
@@ -72,6 +78,7 @@ def test_stream_generate_yields_incremental_chunks(monkeypatch: pytest.MonkeyPat
     result = list(client.stream_generate(system_prompt="s", user_prompt="u"))
 
     assert result == ["你好", "，世界"]
+    assert captured["incremental_output"] is True
 
 
 def test_stream_generate_raises_when_provider_fails(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -31,8 +31,16 @@ class BackendSettings:
     llm_mode: str
     llm_base_url: str | None
     qwen_chat_model: str
+    qwen_vl_model: str
     embedding_model: str
     reranker_model: str
+    search_provider: str
+    search_api_key: str | None
+    search_base_url: str | None
+    search_timeout_seconds: float
+    multimodal_enabled: bool
+    max_visual_assets_per_document: int
+    visual_caption_timeout_seconds: float
     file_storage_path: Path
     max_upload_size_mb: int
     chunk_size: int
@@ -96,6 +104,35 @@ def _get_int(values: Mapping[str, str], key: str, default: int) -> int:
     return parsed
 
 
+def _get_float(values: Mapping[str, str], key: str, default: float) -> float:
+    raw = values.get(key)
+    if raw is None or str(raw).strip() == '':
+        return default
+
+    try:
+        parsed = float(str(raw).strip())
+    except ValueError as exc:
+        raise SettingsError(f'环境变量 {key} 必须是数字') from exc
+
+    if parsed <= 0:
+        raise SettingsError(f'环境变量 {key} 必须大于 0')
+
+    return parsed
+
+
+def _get_bool(values: Mapping[str, str], key: str, default: bool) -> bool:
+    raw = values.get(key)
+    if raw is None or str(raw).strip() == '':
+        return default
+
+    normalized = str(raw).strip().lower()
+    if normalized in {'1', 'true', 'yes', 'on'}:
+        return True
+    if normalized in {'0', 'false', 'no', 'off'}:
+        return False
+    raise SettingsError(f'环境变量 {key} 必须是布尔值')
+
+
 def _resolve_storage_path(raw_path: str) -> Path:
     candidate = Path(raw_path)
     if candidate.is_absolute():
@@ -145,8 +182,16 @@ def load_backend_settings(
         llm_mode=llm_mode,
         llm_base_url=values.get('LLM_BASE_URL', '').strip() or None,
         qwen_chat_model=values.get('QWEN_CHAT_MODEL', 'qwen-plus').strip() or 'qwen-plus',
+        qwen_vl_model=values.get('QWEN_VL_MODEL', 'qwen-vl-max-latest').strip() or 'qwen-vl-max-latest',
         embedding_model=values.get('DASHSCOPE_EMBEDDING_MODEL', 'text-embedding-v1').strip() or 'text-embedding-v1',
         reranker_model=values.get('RERANKER_MODEL', 'gte-rerank-v2').strip() or 'gte-rerank-v2',
+        search_provider=values.get('SEARCH_PROVIDER', 'brave').strip().lower() or 'brave',
+        search_api_key=values.get('SEARCH_API_KEY', '').strip() or None,
+        search_base_url=values.get('SEARCH_BASE_URL', '').strip() or None,
+        search_timeout_seconds=_get_float(values, 'SEARCH_TIMEOUT_SECONDS', 8.0),
+        multimodal_enabled=_get_bool(values, 'MULTIMODAL_ENABLED', True),
+        max_visual_assets_per_document=_get_int(values, 'MAX_VISUAL_ASSETS_PER_DOCUMENT', 8),
+        visual_caption_timeout_seconds=_get_float(values, 'VISUAL_CAPTION_TIMEOUT_SECONDS', 12.0),
         file_storage_path=file_storage_path,
         max_upload_size_mb=_get_int(values, 'MAX_UPLOAD_SIZE_MB', 50),
         chunk_size=chunk_size,

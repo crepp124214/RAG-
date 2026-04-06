@@ -44,6 +44,9 @@ def test_ask_uses_retrieved_chunks_to_build_context() -> None:
             chunk_index=0,
             content="第一段内容",
             page_number=2,
+            source_type="image",
+            asset_label="第 2 页图片 1",
+            preview_available=True,
             score=0.98,
         )
     ]
@@ -60,3 +63,4 @@ def test_ask_uses_retrieved_chunks_to_build_context() -> None:
     assert len(chat_client.calls) == 1
     assert "demo.txt" in chat_client.calls[0]["user_prompt"]
     assert "第一段内容" in chat_client.calls[0]["user_prompt"]
+    assert "视觉内容" in chat_client.calls[0]["user_prompt"]

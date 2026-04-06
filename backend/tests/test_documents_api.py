@@ -155,6 +155,8 @@ def test_get_document_returns_expected_payload(monkeypatch: pytest.MonkeyPatch) 
     assert payload["data"]["id"] == document_id
     assert payload["data"]["name"] == "demo.txt"
     assert payload["data"]["status"] == "UPLOADED"
+    assert payload["data"]["has_visual_assets"] is False
+    assert payload["data"]["visual_asset_count"] == 0
     assert isinstance(payload["data"]["created_at"], str)
     assert isinstance(payload["data"]["updated_at"], str)
 

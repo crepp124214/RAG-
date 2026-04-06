@@ -36,6 +36,8 @@ describe("useDocumentStore", () => {
       file_type: "pdf",
       status: "READY",
       storage_path: "/tmp/doc-1",
+      has_visual_assets: true,
+      visual_asset_count: 2,
       created_at: "2026-04-04T09:00:00",
       updated_at: "2026-04-04T09:10:00",
     })
@@ -55,6 +57,7 @@ describe("useDocumentStore", () => {
     expect(store.items).toHaveLength(1)
     expect(store.items[0].name).toBe("研发周报.pdf")
     expect(store.items[0].taskStatus).toBe("READY")
+    expect(store.items[0].visualAssetCount).toBe(2)
     expect(store.selectedDocumentId).toBe("doc-1")
   })
 
@@ -69,6 +72,8 @@ describe("useDocumentStore", () => {
       file_type: "txt",
       status: "UPLOADED",
       storage_path: "/tmp/doc-2",
+      has_visual_assets: false,
+      visual_asset_count: 0,
       created_at: "2026-04-04T09:00:00",
       updated_at: "2026-04-04T09:00:00",
     })
@@ -100,6 +105,8 @@ describe("useDocumentStore", () => {
         name: "manual.docx",
         fileType: "DOCX",
         documentStatus: "READY",
+        hasVisualAssets: false,
+        visualAssetCount: 0,
         taskStatus: "READY",
         taskType: "INGESTION",
         errorMessage: null,

@@ -8,6 +8,7 @@ import {
   type ChatMessage,
   type ChatSession,
   type Citation,
+  type ToolCall,
 } from "@/services/chat"
 
 const STORAGE_KEY = "rag-selected-session-id"
@@ -20,6 +21,7 @@ export interface ChatMessageItem {
   createdAt: string
   updatedAt: string
   citations: Citation[]
+  toolCalls: ToolCall[]
   isStreaming?: boolean
   isTemporary?: boolean
 }
@@ -63,7 +65,8 @@ function normalizeMessage(message: ChatMessage): ChatMessageItem {
     content: message.content,
     createdAt: message.created_at,
     updatedAt: message.updated_at,
-    citations: [],
+    citations: message.citations ?? [],
+    toolCalls: message.tool_calls ?? [],
   }
 }
 
@@ -81,9 +84,35 @@ function createTemporaryMessage(
     createdAt: stamp,
     updatedAt: stamp,
     citations: [],
+    toolCalls: [],
     isTemporary: true,
     isStreaming: role === "assistant",
   }
+}
+
+function createPendingToolCall(toolName: string, arguments_: Record<string, unknown>): ToolCall {
+  return {
+    tool_name: toolName,
+    arguments: arguments_,
+    status: "pending",
+    result_summary: null,
+    error_code: null,
+    error_detail: null,
+  }
+}
+
+function findToolCallIndex(
+  toolCalls: ToolCall[],
+  toolName: string,
+  arguments_: Record<string, unknown>,
+): number {
+  const serializedArguments = JSON.stringify(arguments_)
+  return toolCalls.findIndex(
+    (toolCall) =>
+      toolCall.tool_name === toolName &&
+      JSON.stringify(toolCall.arguments) === serializedArguments &&
+      toolCall.status === "pending",
+  )
 }
 
 export const useChatStore = defineStore("chat", {
@@ -192,6 +221,28 @@ export const useChatStore = defineStore("chat", {
             continue
           }
 
+          if (event.event === "tool_call") {
+            temporaryAssistantMessage.toolCalls.push(
+              createPendingToolCall(event.data.tool_name, event.data.arguments),
+            )
+            continue
+          }
+
+          if (event.event === "tool_result") {
+            const toolCallIndex = findToolCallIndex(
+              temporaryAssistantMessage.toolCalls,
+              event.data.tool_name,
+              event.data.arguments,
+            )
+
+            if (toolCallIndex >= 0) {
+              temporaryAssistantMessage.toolCalls[toolCallIndex] = event.data
+            } else {
+              temporaryAssistantMessage.toolCalls.push(event.data)
+            }
+            continue
+          }
+
           if (event.event === "citation") {
             temporaryAssistantMessage.citations.push(event.data)
             continue
@@ -203,6 +254,7 @@ export const useChatStore = defineStore("chat", {
             temporaryAssistantMessage.id = event.data.assistant_message_id
             temporaryAssistantMessage.content = event.data.answer
             temporaryAssistantMessage.citations = event.data.citations
+            temporaryAssistantMessage.toolCalls = event.data.tool_calls
             temporaryAssistantMessage.isTemporary = false
             temporaryAssistantMessage.isStreaming = false
             await this.loadSessions()

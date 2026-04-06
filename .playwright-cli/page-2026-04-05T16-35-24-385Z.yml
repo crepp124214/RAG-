@@ -1,0 +1,103 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - paragraph [ref=e6]: 第一阶段最小可运行产品
+      - heading "RAG 智能文档检索助手" [level=1] [ref=e7]
+    - generic [ref=e8]:
+      - generic [ref=e9]: 后端健康状态
+      - strong [ref=e10]: RAG智能文档检索助手 / ok
+  - alert [ref=e11]:
+    - img [ref=e13]
+    - generic [ref=e15]:
+      - generic [ref=e16]: 后端连接成功
+      - paragraph [ref=e17]: 服务状态：ok，环境：development
+  - main [ref=e18]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - heading "会话列表" [level=2] [ref=e22]
+          - text: 按最近活跃排序，支持自动生成首轮标题
+        - button "新建会话" [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: 新建会话
+      - generic [ref=e25]:
+        - button "今天最新消息是什么 2026-04-05T16:35:04.653088+00:00" [ref=e26] [cursor=pointer]:
+          - strong [ref=e27]: 今天最新消息是什么
+          - generic [ref=e28]: 2026-04-05T16:35:04.653088+00:00
+        - button "今天最新消息是什么 2026-04-05T16:23:24.312993+00:00" [ref=e29] [cursor=pointer]:
+          - strong [ref=e30]: 今天最新消息是什么
+          - generic [ref=e31]: 2026-04-05T16:23:24.312993+00:00
+        - button "今天最新消息是什么 2026-04-05T14:57:50.706878+00:00" [ref=e32] [cursor=pointer]:
+          - strong [ref=e33]: 今天最新消息是什么
+          - generic [ref=e34]: 2026-04-05T14:57:50.706878+00:00
+    - generic [ref=e35]:
+      - generic [ref=e37]:
+        - heading "聊天工作台" [level=2] [ref=e38]
+        - text: 暂无会话，发送第一条消息时会自动创建会话
+      - generic [ref=e40]:
+        - textbox "请输入你想从知识库中查询的问题。" [ref=e42]
+        - generic [ref=e43]:
+          - generic [ref=e44]: 按 Ctrl + Enter 发送
+          - button "发送问题" [disabled] [ref=e45]:
+            - generic [ref=e46]: 发送问题
+    - generic [ref=e48]:
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - generic [ref=e51]:
+            - heading "文档管理" [level=2] [ref=e52]
+            - text: 上传、查看并删除当前工作区的知识库文档
+          - button "上传文档" [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]: 上传文档
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - generic [ref=e57]:
+              - generic:
+                - generic: 已跟踪 1 份
+              - generic:
+                - generic: 处理中 0 份
+            - button "phase2-ui-acceptance.txt TXT 文档状态：READY 任务状态：READY" [ref=e58] [cursor=pointer]:
+              - generic [ref=e59]:
+                - strong [ref=e60]: phase2-ui-acceptance.txt
+                - generic:
+                  - generic: TXT
+              - generic [ref=e61]:
+                - generic [ref=e62]: 文档状态：READY
+                - generic [ref=e63]: 任务状态：READY
+          - generic [ref=e64]:
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - heading "phase2-ui-acceptance.txt" [level=3] [ref=e67]
+                - paragraph [ref=e68]: 文档 ID：de43b9d8-5074-4ea0-a61a-00542532bb7a
+              - button "删除文档" [ref=e69] [cursor=pointer]:
+                - generic [ref=e70]: 删除文档
+            - generic [ref=e71]:
+              - generic [ref=e72]:
+                - generic [ref=e73]: 文件类型
+                - strong [ref=e74]: TXT
+              - generic [ref=e75]:
+                - generic [ref=e76]: 文档状态
+                - strong [ref=e77]: READY
+              - generic [ref=e78]:
+                - generic [ref=e79]: 任务状态
+                - strong [ref=e80]: READY
+              - generic [ref=e81]:
+                - generic [ref=e82]: 任务类型
+                - strong [ref=e83]: INGESTION
+            - paragraph [ref=e84]: 最后更新时间：2026-04-05T16:24:30.406384+00:00
+      - generic [ref=e85]:
+        - generic [ref=e87]:
+          - heading "任务状态" [level=2] [ref=e88]
+          - text: 基于当前已跟踪文档展示异步处理进展
+        - list [ref=e89]:
+          - listitem [ref=e90]:
+            - generic [ref=e91]: 已跟踪文档
+            - strong [ref=e92]: "1"
+          - listitem [ref=e93]:
+            - generic [ref=e94]: 处理中任务
+            - strong [ref=e95]: "0"
+          - listitem [ref=e96]:
+            - generic [ref=e97]: 最近状态
+            - strong [ref=e98]: READY
+          - listitem [ref=e99]:
+            - generic [ref=e100]: 最近文档
+            - strong [ref=e101]: phase2-ui-acceptance.txt
+        - paragraph [ref=e102]: 任务状态会在页面打开期间自动轮询；刷新后会从本地保存的文档清单恢复。

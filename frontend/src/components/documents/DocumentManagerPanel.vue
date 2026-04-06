@@ -119,6 +119,7 @@ onBeforeUnmount(() => {
           <div class="document-card-meta">
             <span>文档状态：{{ item.documentStatus }}</span>
             <span>任务状态：{{ item.taskStatus }}</span>
+            <span>视觉资产：{{ item.visualAssetCount }}</span>
           </div>
         </button>
       </div>
@@ -158,10 +159,23 @@ onBeforeUnmount(() => {
               <strong>{{ selectedItem.taskStatus }}</strong>
             </div>
             <div class="detail-item">
+              <span>视觉资产</span>
+              <strong>{{ selectedItem.visualAssetCount }}</strong>
+            </div>
+            <div class="detail-item">
               <span>任务类型</span>
               <strong>{{ selectedItem.taskType }}</strong>
             </div>
           </div>
+
+          <el-alert
+            v-if="selectedItem.hasVisualAssets"
+            :closable="false"
+            type="success"
+            show-icon
+            title="已生成视觉描述"
+            :description="`当前文档已提取 ${selectedItem.visualAssetCount} 条视觉资产，可用于图表和图片相关问答。`"
+          />
 
           <el-alert
             v-if="selectedItem.errorMessage"

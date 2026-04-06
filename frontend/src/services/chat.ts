@@ -12,6 +12,8 @@ export interface ChatMessage {
   session_id: string
   role: string
   content: string
+  citations: Citation[]
+  tool_calls: ToolCall[]
   created_at: string
   updated_at: string
 }
@@ -22,6 +24,18 @@ export interface Citation {
   chunk_id: string
   content: string
   page_number: number | null
+  source_type: string
+  asset_label: string | null
+  preview_available: boolean
+}
+
+export interface ToolCall {
+  tool_name: string
+  arguments: Record<string, unknown>
+  status: string
+  result_summary: string | null
+  error_code: string | null
+  error_detail: string | null
 }
 
 export interface CreateSessionData {
@@ -32,6 +46,7 @@ export interface CreateSessionData {
 export interface ChatQueryData {
   answer: string
   citations: Citation[]
+  tool_calls: ToolCall[]
   user_message_id: string
   assistant_message_id: string
 }
@@ -46,6 +61,19 @@ export interface ChatStreamTokenEvent {
   data: { content: string }
 }
 
+export interface ChatStreamToolCallEvent {
+  event: "tool_call"
+  data: {
+    tool_name: string
+    arguments: Record<string, unknown>
+  }
+}
+
+export interface ChatStreamToolResultEvent {
+  event: "tool_result"
+  data: ToolCall
+}
+
 export interface ChatStreamCitationEvent {
   event: "citation"
   data: Citation
@@ -56,6 +84,7 @@ export interface ChatStreamEndEvent {
   data: {
     answer: string
     citations: Citation[]
+    tool_calls: ToolCall[]
     user_message_id: string
     assistant_message_id: string
     session_id: string
@@ -72,6 +101,8 @@ export interface ChatStreamErrorEvent {
 
 export type ChatStreamEvent =
   | ChatStreamStartEvent
+  | ChatStreamToolCallEvent
+  | ChatStreamToolResultEvent
   | ChatStreamTokenEvent
   | ChatStreamCitationEvent
   | ChatStreamEndEvent

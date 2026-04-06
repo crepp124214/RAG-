@@ -5,6 +5,8 @@ import math
 import re
 from collections.abc import Iterator
 
+from backend.app.tools.base import ToolCallDecision
+
 
 _ACCEPTANCE_PREFIX = '【验收模式】以下回答由本地确定性验收模式生成，仅用于验证第29步端到端链路，不代表正式模型输出。'
 _TOKEN_PATTERN = re.compile(r'\w+', re.UNICODE)
@@ -70,6 +72,20 @@ class AcceptanceChatClient:
         for start in range(0, len(answer), 24):
             yield answer[start : start + 24]
 
+    def decide_tool_call(self, *, query: str, tool_schemas: list[dict[str, object]]) -> ToolCallDecision | None:
+        tool_names = {str(item.get("name", "")) for item in tool_schemas}
+        lowered = query.lower()
+
+        if "web_search" in tool_names and any(token in query or token in lowered for token in ["今天", "最新", "最近", "实时", "latest", "today"]):
+            return ToolCallDecision(tool_name="web_search", arguments={"query": query, "top_k": 5})
+
+        if "document_lookup" in tool_names and any(token in query or token in lowered for token in ["文档", "文件", "任务", "状态", "页", "document", "task"]):
+            if "任务" in query or "task" in lowered:
+                return ToolCallDecision(tool_name="document_lookup", arguments={"lookup_type": "status", "query": query})
+            return ToolCallDecision(tool_name="document_lookup", arguments={"lookup_type": "content", "query": query, "limit": 5})
+
+        return None
+
     def _build_answer(self, user_prompt: str) -> str:
         context_lines = _extract_context_lines(user_prompt)
         if not context_lines:
@@ -78,3 +94,16 @@ class AcceptanceChatClient:
         summary_lines = context_lines[:3]
         body = '\n'.join(f'- {line}' for line in summary_lines)
         return f'{_ACCEPTANCE_PREFIX}\n我已基于已检索片段生成回答，请重点核对下面这些引用片段：\n{body}'
+
+
+class AcceptanceVisionCaptionClient:
+    def __init__(self, *, model: str) -> None:
+        self.model = model
+
+    def describe_image(self, *, image_path: str, asset_label: str) -> str:
+        image_name = image_path.split("/")[-1].split("\\")[-1]
+        return (
+            f"【验收模式视觉描述】{asset_label}。"
+            f"图像文件：{image_name}。"
+            "该视觉内容用于验证第三阶段多模态入库、检索与引用链路。"
+        )

@@ -11,6 +11,8 @@ export interface DocumentDetailData {
   file_type: string
   status: string
   storage_path: string
+  has_visual_assets: boolean
+  visual_asset_count: number
   created_at: string
   updated_at: string
 }
