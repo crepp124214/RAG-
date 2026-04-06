@@ -51,6 +51,8 @@ class FakeChatService:
                     "source_type": "text",
                     "asset_label": None,
                     "preview_available": False,
+                    "relation_label": None,
+                    "entity_path": None,
                 }
             ],
             tool_calls=[
@@ -88,12 +90,14 @@ class FakeChatService:
                     document_id="doc-1",
                     document_name="demo.txt",
                     chunk_index=0,
-                    content="片段",
+                    content="系统 A -> 依赖 -> 系统 B",
                     page_number=1,
-                    source_type="text",
+                    source_type="graph",
                     asset_label=None,
                     preview_available=False,
                     score=0.9,
+                    relation_label="依赖",
+                    entity_path="系统 A -> 系统 B",
                 )
             ],
             tool_calls=[
@@ -121,11 +125,13 @@ class FakeChatService:
                     "document_id": "doc-1",
                     "document_name": "demo.txt",
                     "chunk_id": "chunk-1",
-                    "content": "片段",
+                    "content": "系统 A -> 依赖 -> 系统 B",
                     "page_number": 1,
-                    "source_type": "text",
+                    "source_type": "graph",
                     "asset_label": None,
                     "preview_available": False,
+                    "relation_label": "依赖",
+                    "entity_path": "系统 A -> 系统 B",
                 },
             },
         )
@@ -271,6 +277,8 @@ def test_list_messages_endpoint_returns_session_messages() -> None:
     assert payload["data"][0]["role"] == "assistant"
     assert payload["data"][0]["citations"][0]["document_id"] == "doc-1"
     assert payload["data"][0]["citations"][0]["source_type"] == "text"
+    assert payload["data"][0]["citations"][0]["relation_label"] is None
+    assert payload["data"][0]["citations"][0]["entity_path"] is None
     assert payload["data"][0]["tool_calls"][0]["tool_name"] == "web_search"
 
 
@@ -290,7 +298,9 @@ def test_query_endpoint_returns_answer_and_citations() -> None:
     assert payload["success"] is True
     assert payload["data"]["answer"] == "这是回答"
     assert payload["data"]["citations"][0]["document_id"] == "doc-1"
-    assert payload["data"]["citations"][0]["source_type"] == "text"
+    assert payload["data"]["citations"][0]["source_type"] == "graph"
+    assert payload["data"]["citations"][0]["relation_label"] == "依赖"
+    assert payload["data"]["citations"][0]["entity_path"] == "系统 A -> 系统 B"
     assert payload["data"]["tool_calls"][0]["tool_name"] == "web_search"
     assert payload["data"]["user_message_id"] == "user-1"
     assert payload["data"]["assistant_message_id"] == "assistant-1"
@@ -356,7 +366,9 @@ def test_stream_endpoint_returns_sse_events() -> None:
     ]
     assert events[2][1]["tool_name"] == "web_search"
     assert events[3][1]["status"] == "success"
-    assert events[1][1]["source_type"] == "text"
+    assert events[1][1]["source_type"] == "graph"
+    assert events[1][1]["relation_label"] == "依赖"
+    assert events[1][1]["entity_path"] == "系统 A -> 系统 B"
     assert events[-1][1]["citations"] == [events[1][1]]
     assert events[-1][1]["tool_calls"] == [events[3][1]]
 

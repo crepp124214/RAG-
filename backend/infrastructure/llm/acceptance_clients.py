@@ -107,3 +107,23 @@ class AcceptanceVisionCaptionClient:
             f"图像文件：{image_name}。"
             "该视觉内容用于验证第三阶段多模态入库、检索与引用链路。"
         )
+
+
+class AcceptanceGraphExtractorClient:
+    def __init__(self, *, model: str) -> None:
+        self.model = model
+
+    def extract_triples(self, *, text: str) -> list[dict[str, object]]:
+        tokens = _tokenize(text)
+        if len(tokens) < 2:
+            return []
+        if len(tokens) >= 3:
+            return [
+                {
+                    "subject": tokens[0],
+                    "predicate": "related_to",
+                    "object": tokens[-1],
+                    "entity_type": "concept",
+                }
+            ]
+        return []

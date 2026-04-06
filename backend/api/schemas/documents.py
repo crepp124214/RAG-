@@ -16,6 +16,9 @@ class DocumentDetailData(BaseModel):
     storage_path: str
     has_visual_assets: bool
     visual_asset_count: int
+    has_graph: bool
+    graph_status: str
+    graph_relation_count: int
     created_at: str
     updated_at: str
 

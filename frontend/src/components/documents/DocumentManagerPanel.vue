@@ -120,6 +120,7 @@ onBeforeUnmount(() => {
             <span>文档状态：{{ item.documentStatus }}</span>
             <span>任务状态：{{ item.taskStatus }}</span>
             <span>视觉资产：{{ item.visualAssetCount }}</span>
+            <span>图谱状态：{{ item.graphStatus }}</span>
           </div>
         </button>
       </div>
@@ -166,7 +167,33 @@ onBeforeUnmount(() => {
               <span>任务类型</span>
               <strong>{{ selectedItem.taskType }}</strong>
             </div>
+            <div class="detail-item">
+              <span>图谱状态</span>
+              <strong>{{ selectedItem.graphStatus }}</strong>
+            </div>
+            <div class="detail-item">
+              <span>图谱关系数</span>
+              <strong>{{ selectedItem.graphRelationCount }}</strong>
+            </div>
           </div>
+
+          <el-alert
+            v-if="selectedItem.hasGraph"
+            :closable="false"
+            type="info"
+            show-icon
+            title="图谱构建已就绪"
+            :description="`当前文档已构建 ${selectedItem.graphRelationCount} 条图谱关系，可用于关系型问答。`"
+          />
+
+          <el-alert
+            v-else-if="selectedItem.graphStatus === 'FAILED'"
+            :closable="false"
+            type="warning"
+            show-icon
+            title="图谱构建失败"
+            description="文本问答仍可继续使用，但当前文档暂时无法提供图谱证据。"
+          />
 
           <el-alert
             v-if="selectedItem.hasVisualAssets"

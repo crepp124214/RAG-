@@ -15,21 +15,21 @@
 
 ## 当前状态
 
-- 当前阶段：第三阶段
-- 当前目标：第三阶段已完成，准备进入第四阶段规划
+- 当前阶段：第四阶段
+- 当前目标：第四阶段 GraphRAG 最小闭环已完成，包含自动化回归、真实 Neo4j API 联调和前端页面快照复核
 - 第一阶段状态：已完成并验收通过
 - 第二阶段状态：已完成并验收通过
 - 第三阶段状态：已完成实现、自动化回归与人工验收
+- 第四阶段状态：已完成计划冻结、代码实现、自动化回归、真实 Neo4j API 联调和前端页面快照复核
 - 最新稳定验证基线：
-  - 后端测试：`123 passed`
-  - 前端测试：`16 passed`
+  - 后端测试：`132 passed`
+  - 前端测试：`17 passed`
   - 前端 `lint`：通过
   - 前端 `typecheck`：通过
   - 后端覆盖率：待本轮重新统计
 - 当前进行事项：
-  - 正在整理第三阶段最终验收与验证基线
+  - 第四阶段最终收口检查
 - 当前待收尾事项：
-  - 启动第四阶段计划文档
   - 视需要补跑后端覆盖率
 
 ---
@@ -189,6 +189,80 @@
 
 ---
 
+## 第四阶段进展
+
+### 第四阶段概览
+
+- 对应计划：`phase4-implementation-plan.md`
+- 阶段目标：完成 GraphRAG 最小闭环，覆盖文本块构图、Neo4j 图谱入库、图检索与向量检索双路召回、聊天图引用和前端最小展示
+- 阶段状态：自动化最小闭环、真实 Neo4j API 联调和前端页面快照复核已完成
+
+### 第四阶段步骤记录
+
+1. 第四阶段步骤 1 已完成（2026-04-06）
+   - 完成内容：已先补齐并冻结 `phase4-implementation-plan.md`，同步更新 `game-design-document.md`、`tech-stack.md`、`CLAUDE.md` 的第四阶段口径。
+   - 验证结果：计划文档已包含目标、边界、状态设计、接口变化、测试要求和本地 Neo4j 联调步骤。
+   - 备注：本阶段边界固定为最小 GraphRAG 闭环，不新增独立图谱页面，不暴露 `graph_query` 工具，不接外部知识源，不使用视觉块构图。
+
+2. 第四阶段步骤 2 已完成（2026-04-06）
+   - 完成内容：已新增文档图谱摘要字段和数据库迁移，图谱构建使用独立 `GRAPH_BUILD` 任务；文档入库主链成功后异步触发图构建，图失败不回滚文档主状态。
+   - 验证结果：`test_graph_tasks.py` 覆盖图任务成功、图任务失败、文档主状态保持 `READY` 等路径。
+   - 备注：图谱状态由 `documents.graph_status` 和 graph task 共同观测，文档主 `status` 仍只表示文档入库主链。
+
+3. 第四阶段步骤 3 已完成（2026-04-06）
+   - 完成内容：已新增 `backend/infrastructure/graph/`、`graph_service.py` 和图抽取 LLM 适配；三元组抽取支持本地清洗、去空、去重和长度限制，Neo4j 访问使用固定模板。
+   - 验证结果：`test_graph_service.py` 覆盖抽取清洗、去重和字段限制。
+   - 备注：acceptance 模式已提供确定性图抽取客户端，用于无真实模型环境下的自动化测试。
+
+4. 第四阶段步骤 4 已完成（2026-04-06）
+   - 完成内容：`RetrievalService` 已扩展为向量检索与图检索双路召回；关系型问题尝试图检索，Neo4j 不可用或图查询失败时自动降级到向量路径。
+   - 验证结果：`test_retrieval_service.py` 覆盖图证据合并和图查询失败降级。
+   - 备注：图检索仍是内部检索能力，没有接入 Tool Calling。
+
+5. 第四阶段步骤 5 已完成（2026-04-06）
+   - 完成内容：文档详情接口新增 `has_graph`、`graph_status`、`graph_relation_count`；聊天引用新增 `relation_label`、`entity_path`，SSE 沿用原有 `citation` 与 `message_end.citations`。
+   - 验证结果：`test_documents_api.py`、`test_chat_api.py`、`test_qa_service.py` 已覆盖图摘要和图引用契约。
+   - 备注：没有新增 SSE 事件种类。
+
+6. 第四阶段步骤 6 已完成（2026-04-06）
+   - 完成内容：前端服务层、文档 store、聊天 store、文档管理面板和聊天工作台已支持图谱摘要与图引用展示。
+   - 验证结果：`documents.spec.ts`、`chat-store.spec.ts`、`chat-workspace.spec.ts` 已覆盖图摘要恢复、图引用恢复和图谱引用卡片展示。
+   - 备注：仍不新增独立图谱页面。
+
+7. 第四阶段步骤 7 已完成（2026-04-06）
+   - 完成内容：已完成第四阶段自动化回归，并补齐本地 Neo4j 人工联调步骤。
+   - 验证结果：
+     - `python -m pytest backend/tests -p no:cacheprovider` -> `132 passed`
+     - `cmd /c npm run test:unit -- --run` -> `17 passed`
+     - `cmd /c npm run typecheck` -> 通过
+     - `cmd /c npm run lint` -> 通过
+     - `git diff --check -- README.md memory-bank\phase4-implementation-plan.md` -> 通过
+   - 备注：自动化基线已覆盖图任务、图检索、图引用、降级路径和前端组件展示。
+
+8. 第四阶段步骤 8 已完成（2026-04-06）
+   - 完成内容：已执行真实 Neo4j 本地 API 联调，覆盖 Neo4j 启动、迁移、上传文本烟测文档、图谱构建、图引用问答、删除清理和 Neo4j 不可用降级。
+   - 验证结果：
+     - `docker run --name rag-neo4j ... neo4j:5-community` 启动成功
+     - Neo4j bolt 连接验证通过
+     - `alembic upgrade head` 成功应用 `20260406_000004_add_document_graph_summary`
+     - 上传 `graph-smoke.txt` 后轮询得到 `task=READY doc=READY graph=READY relations=1`
+     - 聊天接口返回 `source_type="graph"`，并包含 `relation_label` 与 `entity_path`
+     - 删除文档后 Neo4j 中该文档 `RELATED_TO` 关系数为 `0`
+     - Neo4j 停止时重新上传文档得到 `task=READY doc=READY graph=FAILED relations=0`
+     - Neo4j 停止时聊天接口仍返回 `success=true`，并降级为文本引用
+   - 备注：联调过程中发现并修复了两个真实问题：整句图查询无法命中实体词、图清理异常会阻断文档删除。
+
+9. 第四阶段步骤 9 已完成（2026-04-06）
+   - 完成内容：已完成前端页面快照复核，确认历史会话中的图谱引用卡片可渲染。
+   - 验证结果：
+     - `cmd /c npx --yes --package @playwright/cli playwright-cli -s=phase4 open http://127.0.0.1:5173` 成功打开页面
+     - 页面快照确认聊天工作台展示 `图谱引用`
+     - 页面快照确认图引用展示 `实体路径：系统 -> related_to -> 用户订单`
+     - `playwright-cli -s=phase4 console error` -> `Errors: 0`
+   - 备注：最初浏览器 MCP 因 `EPERM: operation not permitted, mkdir 'C:\Windows\System32\.playwright-mcp'` 无法运行，已改用 `playwright-cli` 完成复核。
+
+---
+
 ## 更新时间线
 
 ### 2026-04-03
@@ -214,3 +288,8 @@
 - 完成第三阶段最小闭环实现与自动化回归
 - 更新当前验证基线为后端 `123 passed`、前端 `16 passed`
 - 完成第三阶段人工验收，并补齐验收中发现问题的修复与回归
+- 启动第四阶段，新增并冻结 `phase4-implementation-plan.md`
+- 完成第四阶段 GraphRAG 自动化最小闭环实现
+- 更新当前自动化验证基线为后端 `132 passed`、前端 `17 passed`
+- 补齐第四阶段本地 Neo4j 人工联调步骤
+- 完成第四阶段真实 Neo4j API 联调和前端页面快照复核

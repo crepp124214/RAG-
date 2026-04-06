@@ -36,6 +36,8 @@ def _serialize_citations(citations: list[Any]) -> list[dict[str, Any]]:
             "source_type": citation.source_type,
             "asset_label": citation.asset_label,
             "preview_available": citation.preview_available,
+            "relation_label": citation.relation_label,
+            "entity_path": citation.entity_path,
         }
         for citation in citations
     ]
@@ -157,6 +159,8 @@ class ChatService:
                         "source_type": citation.source_type,
                         "asset_label": citation.asset_label,
                         "preview_available": citation.preview_available,
+                        "relation_label": citation.relation_label,
+                        "entity_path": citation.entity_path,
                     },
                 )
 

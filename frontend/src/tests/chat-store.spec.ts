@@ -69,11 +69,13 @@ describe("useChatStore", () => {
           document_id: "doc-1",
           document_name: "开发手册",
           chunk_id: "chunk-1",
-          content: "这里是引用",
+          content: "系统 A -> 依赖 -> 系统 B",
           page_number: 2,
-          source_type: "image",
-          asset_label: "第 2 页图片 1",
-          preview_available: true,
+          source_type: "graph",
+          asset_label: null,
+          preview_available: false,
+          relation_label: "依赖",
+          entity_path: "系统 A -> 系统 B",
         },
       }
       yield {
@@ -85,11 +87,13 @@ describe("useChatStore", () => {
               document_id: "doc-1",
               document_name: "开发手册",
               chunk_id: "chunk-1",
-              content: "这里是引用",
+              content: "系统 A -> 依赖 -> 系统 B",
               page_number: 2,
-              source_type: "image",
-              asset_label: "第 2 页图片 1",
-              preview_available: true,
+              source_type: "graph",
+              asset_label: null,
+              preview_available: false,
+              relation_label: "依赖",
+              entity_path: "系统 A -> 系统 B",
             },
           ],
           tool_calls: [
@@ -117,6 +121,9 @@ describe("useChatStore", () => {
     expect(store.messages[0].role).toBe("user")
     expect(store.messages[1].content).toBe("你好，以下是结果")
     expect(store.messages[1].citations).toHaveLength(1)
+    expect(store.messages[1].citations[0].source_type).toBe("graph")
+    expect(store.messages[1].citations[0].relation_label).toBe("依赖")
+    expect(store.messages[1].citations[0].entity_path).toBe("系统 A -> 系统 B")
     expect(store.messages[1].toolCalls).toHaveLength(1)
     expect(store.messages[1].toolCalls[0].tool_name).toBe("web_search")
     expect(store.isSending).toBe(false)
@@ -214,11 +221,13 @@ describe("useChatStore", () => {
             document_id: "doc-1",
             document_name: "验收文档.txt",
             chunk_id: "chunk-1",
-            content: "第一段内容",
+            content: "系统 A -> 依赖 -> 系统 B",
             page_number: 1,
-            source_type: "text",
+            source_type: "graph",
             asset_label: null,
             preview_available: false,
+            relation_label: "依赖",
+            entity_path: "系统 A -> 系统 B",
           },
         ],
         tool_calls: [
@@ -242,6 +251,7 @@ describe("useChatStore", () => {
     expect(store.selectedSessionId).toBe("session-1")
     expect(store.messages).toHaveLength(1)
     expect(store.messages[0].citations[0].document_id).toBe("doc-1")
+    expect(store.messages[0].citations[0].entity_path).toBe("系统 A -> 系统 B")
     expect(store.messages[0].toolCalls[0].tool_name).toBe("document_lookup")
   })
 })

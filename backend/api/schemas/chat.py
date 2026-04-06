@@ -40,6 +40,8 @@ class CitationData(BaseModel):
     source_type: str = "text"
     asset_label: str | None = None
     preview_available: bool = False
+    relation_label: str | None = None
+    entity_path: str | None = None
 
 
 class ToolCallData(BaseModel):

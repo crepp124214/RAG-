@@ -1,5 +1,5 @@
 import { createPinia, setActivePinia } from "pinia"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { useDocumentStore } from "@/stores/documents"
 
@@ -22,6 +22,11 @@ describe("useDocumentStore", () => {
     setActivePinia(createPinia())
     localStorage.clear()
     vi.clearAllMocks()
+    vi.useRealTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it("能从本地记录恢复文档和任务状态", async () => {
@@ -38,6 +43,9 @@ describe("useDocumentStore", () => {
       storage_path: "/tmp/doc-1",
       has_visual_assets: true,
       visual_asset_count: 2,
+      has_graph: true,
+      graph_status: "READY",
+      graph_relation_count: 8,
       created_at: "2026-04-04T09:00:00",
       updated_at: "2026-04-04T09:10:00",
     })
@@ -58,6 +66,9 @@ describe("useDocumentStore", () => {
     expect(store.items[0].name).toBe("研发周报.pdf")
     expect(store.items[0].taskStatus).toBe("READY")
     expect(store.items[0].visualAssetCount).toBe(2)
+    expect(store.items[0].hasGraph).toBe(true)
+    expect(store.items[0].graphStatus).toBe("READY")
+    expect(store.items[0].graphRelationCount).toBe(8)
     expect(store.selectedDocumentId).toBe("doc-1")
   })
 
@@ -74,6 +85,9 @@ describe("useDocumentStore", () => {
       storage_path: "/tmp/doc-2",
       has_visual_assets: false,
       visual_asset_count: 0,
+      has_graph: false,
+      graph_status: "NOT_STARTED",
+      graph_relation_count: 0,
       created_at: "2026-04-04T09:00:00",
       updated_at: "2026-04-04T09:00:00",
     })
@@ -107,6 +121,9 @@ describe("useDocumentStore", () => {
         documentStatus: "READY",
         hasVisualAssets: false,
         visualAssetCount: 0,
+        hasGraph: false,
+        graphStatus: "FAILED",
+        graphRelationCount: 0,
         taskStatus: "READY",
         taskType: "INGESTION",
         errorMessage: null,
@@ -121,5 +138,59 @@ describe("useDocumentStore", () => {
 
     expect(store.items).toHaveLength(0)
     expect(localStorage.getItem("rag-document-registry")).toBe("[]")
+  })
+
+  it("入库任务完成但图谱仍在处理时会继续轮询文档详情", async () => {
+    vi.useFakeTimers()
+    const store = useDocumentStore()
+    store.items = [
+      {
+        documentId: "doc-graph",
+        taskId: "task-ingestion",
+        name: "graph.txt",
+        fileType: "TXT",
+        documentStatus: "READY",
+        hasVisualAssets: false,
+        visualAssetCount: 0,
+        hasGraph: false,
+        graphStatus: "PROCESSING",
+        graphRelationCount: 0,
+        taskStatus: "READY",
+        taskType: "INGESTION",
+        errorMessage: null,
+        createdAt: "2026-04-06T09:00:00",
+        updatedAt: "2026-04-06T09:01:00",
+      },
+    ]
+
+    serviceMocks.fetchDocument.mockResolvedValue({
+      id: "doc-graph",
+      name: "graph.txt",
+      file_type: "txt",
+      status: "READY",
+      storage_path: "/tmp/doc-graph",
+      has_visual_assets: false,
+      visual_asset_count: 0,
+      has_graph: false,
+      graph_status: "PROCESSING",
+      graph_relation_count: 0,
+      created_at: "2026-04-06T09:00:00",
+      updated_at: "2026-04-06T09:02:00",
+    })
+    serviceMocks.fetchTask.mockResolvedValue({
+      id: "task-ingestion",
+      document_id: "doc-graph",
+      task_type: "INGESTION",
+      status: "READY",
+      error_message: null,
+      created_at: "2026-04-06T09:00:00",
+      updated_at: "2026-04-06T09:02:00",
+    })
+
+    store.startPolling("doc-graph")
+    await store.refreshDocument("doc-graph")
+    await vi.advanceTimersByTimeAsync(2000)
+
+    expect(serviceMocks.fetchDocument).toHaveBeenCalledTimes(2)
   })
 })

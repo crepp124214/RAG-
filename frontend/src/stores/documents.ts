@@ -12,6 +12,7 @@ import { ApiRequestError } from "@/services/http"
 
 const STORAGE_KEY = "rag-document-registry"
 const TERMINAL_TASK_STATUSES = new Set(["READY", "FAILED"])
+const TERMINAL_GRAPH_STATUSES = new Set(["READY", "FAILED"])
 const pollingHandles = new Map<string, ReturnType<typeof setInterval>>()
 
 interface PersistedDocumentEntry {
@@ -27,6 +28,9 @@ export interface DocumentListItem {
   documentStatus: string
   hasVisualAssets: boolean
   visualAssetCount: number
+  hasGraph: boolean
+  graphStatus: string
+  graphRelationCount: number
   taskStatus: string
   taskType: string
   errorMessage: string | null
@@ -81,12 +85,23 @@ function mergeDocumentDetail(
     documentStatus: document.status,
     hasVisualAssets: document.has_visual_assets,
     visualAssetCount: document.visual_asset_count,
+    hasGraph: document.has_graph,
+    graphStatus: document.graph_status,
+    graphRelationCount: document.graph_relation_count,
     taskStatus: task.status,
     taskType: task.task_type,
     errorMessage: task.error_message,
     createdAt: document.created_at,
     updatedAt: task.updated_at ?? document.updated_at,
   }
+}
+
+function shouldContinuePolling(item: DocumentListItem): boolean {
+  if (!TERMINAL_TASK_STATUSES.has(item.taskStatus)) {
+    return true
+  }
+
+  return !TERMINAL_GRAPH_STATUSES.has(item.graphStatus)
 }
 
 export const useDocumentStore = defineStore("documents", {
@@ -210,7 +225,7 @@ export const useDocumentStore = defineStore("documents", {
       this.persistRegistry()
 
       for (const item of this.items) {
-        if (!TERMINAL_TASK_STATUSES.has(item.taskStatus)) {
+        if (shouldContinuePolling(item)) {
           this.startPolling(item.documentId)
         }
       }
@@ -236,7 +251,7 @@ export const useDocumentStore = defineStore("documents", {
         )
         this.upsertItem(merged)
 
-        if (TERMINAL_TASK_STATUSES.has(merged.taskStatus)) {
+        if (!shouldContinuePolling(merged)) {
           this.stopPolling(documentId)
         }
       } catch (error) {

@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from "pinia"
 import ElementPlus from "element-plus"
 import { mount } from "@vue/test-utils"
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import ChatWorkspacePanel from "@/components/chat/ChatWorkspacePanel.vue"
 import { useChatStore } from "@/stores/chat"
@@ -86,5 +86,98 @@ describe("ChatWorkspacePanel", () => {
     expect(wrapper.text()).toContain("季度报告.pdf")
     expect(wrapper.text()).toContain("第 3 页图片 1")
     expect(wrapper.text()).toContain("柱状图显示第二季度销量最高。")
+  })
+
+  it("会渲染图谱引用标签和实体路径", async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const store = useChatStore()
+    store.messages = [
+      {
+        id: "assistant-3",
+        sessionId: "session-1",
+        role: "assistant",
+        content: "系统依赖关系如下。",
+        createdAt: "2026-04-06T10:05:00Z",
+        updatedAt: "2026-04-06T10:05:00Z",
+        toolCalls: [],
+        citations: [
+          {
+            document_id: "doc-graph-1",
+            document_name: "系统蓝图.txt",
+            chunk_id: "chunk-graph-1",
+            content: "系统 A -> 依赖 -> 系统 B",
+            page_number: 4,
+            source_type: "graph",
+            asset_label: null,
+            preview_available: false,
+            relation_label: "依赖",
+            entity_path: "系统 A -> 系统 B",
+          },
+        ],
+      },
+    ]
+
+    const wrapper = mount(ChatWorkspacePanel, {
+      global: {
+        plugins: [pinia, ElementPlus],
+      },
+    })
+
+    expect(wrapper.text()).toContain("系统蓝图.txt")
+    expect(wrapper.text()).toContain("图谱引用")
+    expect(wrapper.text()).toContain("系统 A -> 系统 B")
+    expect(wrapper.text()).toContain("系统依赖关系如下。")
+  })
+
+  it("同一来源分块同时作为文本和图谱引用时不会产生重复 key 警告", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined)
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const store = useChatStore()
+    store.messages = [
+      {
+        id: "assistant-4",
+        sessionId: "session-1",
+        role: "assistant",
+        content: "系统依赖关系如下。",
+        createdAt: "2026-04-06T10:10:00Z",
+        updatedAt: "2026-04-06T10:10:00Z",
+        toolCalls: [],
+        citations: [
+          {
+            document_id: "doc-graph-1",
+            document_name: "系统蓝图.txt",
+            chunk_id: "chunk-shared-1",
+            content: "系统 A 依赖系统 B。",
+            page_number: 4,
+            source_type: "text",
+            asset_label: null,
+            preview_available: false,
+          },
+          {
+            document_id: "doc-graph-1",
+            document_name: "系统蓝图.txt",
+            chunk_id: "chunk-shared-1",
+            content: "系统 A -> 依赖 -> 系统 B",
+            page_number: 4,
+            source_type: "graph",
+            asset_label: null,
+            preview_available: false,
+            relation_label: "依赖",
+            entity_path: "系统 A -> 系统 B",
+          },
+        ],
+      },
+    ]
+
+    mount(ChatWorkspacePanel, {
+      global: {
+        plugins: [pinia, ElementPlus],
+      },
+    })
+
+    expect(warnSpy).not.toHaveBeenCalledWith(expect.stringContaining("Duplicate keys"))
+    warnSpy.mockRestore()
   })
 })

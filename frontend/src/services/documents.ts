@@ -13,6 +13,9 @@ export interface DocumentDetailData {
   storage_path: string
   has_visual_assets: boolean
   visual_asset_count: number
+  has_graph: boolean
+  graph_status: string
+  graph_relation_count: number
   created_at: string
   updated_at: string
 }
