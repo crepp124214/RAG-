@@ -180,6 +180,10 @@ frontend/node_modules/
 frontend/dist/
 frontend/coverage/
 .dev/
+.worktrees/
+.playwright-cli/
+output/
+data/uploads/
 
 # OS generated files
 .DS_Store
