@@ -25,6 +25,14 @@
 - 前端测试：`vitest + vue-test-utils`
 - 旧 `core/` 迁移方式：尽量直接复用后包一层
 
+第五阶段产品化最小闭环冻结口径：
+
+- 部署路线继续优先采用 Docker Compose / Windows 脚本
+- Neo4j 作为 GraphRAG 可选依赖，缺失时基础文本 RAG 应可降级运行
+- 健康检查与就绪检查优先基于 FastAPI 接口和脚本，不引入重型平台
+- 第一轮不做鉴权、登录、多租户
+- 第一轮不引入 Kubernetes、完整 CI/CD 平台、Prometheus / Grafana 正式接入
+
 这套方案的核心特点是：
 
 - 足够简单，容易从当前 Streamlit Demo 平滑迁移
@@ -403,6 +411,22 @@
 
 - 支持跨文档、跨实体、全局关系问题
 - 在不破坏现有文本 RAG 主链的前提下补足关系型问题能力
+
+## Phase 5：稳定性与产品化最小闭环
+
+增加：
+
+- `/api/health` 与 `/api/ready` 的清晰职责边界
+- PostgreSQL、Redis、文件存储和可选 Neo4j 的就绪检查
+- Docker Compose / Windows 脚本优先的 smoke/check 入口
+- `.env.example`、README 和配置校验口径
+- 灰度配置说明
+- 基于现有结构化日志的最低可观测性口径
+
+目标：
+
+- 让现有四阶段能力更容易启动、检查、部署、排错和验收
+- 不在第一轮引入鉴权、登录、多租户、Kubernetes、完整 CI/CD 平台或 Prometheus / Grafana 正式接入
 
 ---
 

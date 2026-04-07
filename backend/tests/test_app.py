@@ -1,6 +1,7 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from backend.app.exceptions import AppError
+from backend.app.services.system_service import ReadinessComponent, ReadinessSummary
 from backend.tests.support import create_initialized_test_client
 
 
@@ -23,6 +24,101 @@ def test_health_check_exposes_acceptance_mode_when_enabled() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload['data']['llm_mode'] == 'acceptance'
+
+
+def test_ready_check_returns_ready_payload() -> None:
+    with create_initialized_test_client() as (client, _, _):
+        from backend.api.routes import system
+
+        original = system.build_readiness_report
+        system.build_readiness_report = lambda **_: ReadinessSummary(
+            app_name='RAG测试应用',
+            app_env='test',
+            llm_mode='production',
+            status='ready',
+            ready=True,
+            degraded=False,
+            http_status=200,
+            components=[
+                ReadinessComponent(name='database', label='PostgreSQL', status='ready', required=True),
+                ReadinessComponent(name='redis', label='Redis', status='ready', required=True),
+            ],
+        )
+        try:
+            response = client.get('/api/ready')
+        finally:
+            system.build_readiness_report = original
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload['success'] is True
+    assert payload['data']['status'] == 'ready'
+    assert payload['data']['ready'] is True
+
+
+def test_ready_check_returns_degraded_payload_without_blocking() -> None:
+    with create_initialized_test_client() as (client, _, _):
+        from backend.api.routes import system
+
+        original = system.build_readiness_report
+        system.build_readiness_report = lambda **_: ReadinessSummary(
+            app_name='RAG测试应用',
+            app_env='test',
+            llm_mode='production',
+            status='degraded',
+            ready=True,
+            degraded=True,
+            http_status=200,
+            components=[
+                ReadinessComponent(name='database', label='PostgreSQL', status='ready', required=True),
+                ReadinessComponent(name='neo4j', label='Neo4j', status='failed', required=False),
+            ],
+        )
+        try:
+            response = client.get('/api/ready')
+        finally:
+            system.build_readiness_report = original
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload['success'] is True
+    assert payload['data']['status'] == 'degraded'
+    assert payload['data']['degraded'] is True
+
+
+def test_ready_check_returns_503_when_required_dependency_is_not_ready() -> None:
+    with create_initialized_test_client() as (client, _, _):
+        from backend.api.routes import system
+
+        original = system.build_readiness_report
+        system.build_readiness_report = lambda **_: ReadinessSummary(
+            app_name='RAG测试应用',
+            app_env='test',
+            llm_mode='production',
+            status='not_ready',
+            ready=False,
+            degraded=False,
+            http_status=503,
+            components=[
+                ReadinessComponent(
+                    name='database',
+                    label='PostgreSQL',
+                    status='failed',
+                    required=True,
+                    detail='connection refused',
+                ),
+            ],
+        )
+        try:
+            response = client.get('/api/ready')
+        finally:
+            system.build_readiness_report = original
+
+    assert response.status_code == 503
+    payload = response.json()
+    assert payload['success'] is True
+    assert payload['data']['status'] == 'not_ready'
+    assert payload['data']['ready'] is False
 
 
 def test_missing_route_returns_standard_error_response() -> None:

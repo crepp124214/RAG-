@@ -15,22 +15,23 @@
 
 ## 当前状态
 
-- 当前阶段：第四阶段
-- 当前目标：第四阶段 GraphRAG 最小闭环已完成，包含自动化回归、真实 Neo4j API 联调和前端页面快照复核
+- 当前阶段：第五阶段实施中
+- 当前目标：完成第五阶段第一批产品化能力，包括 `/api/ready`、配置安全校验、`health/smoke` 脚本入口与最小运行说明
 - 第一阶段状态：已完成并验收通过
 - 第二阶段状态：已完成并验收通过
 - 第三阶段状态：已完成实现、自动化回归与人工验收
-- 第四阶段状态：已完成计划冻结、代码实现、自动化回归、真实 Neo4j API 联调和前端页面快照复核
+- 第四阶段状态：已完成计划冻结、代码实现、自动化回归、真实 Neo4j API 联调、前端页面快照复核，并已合并到本地 `main`
+- 第五阶段状态：已完成计划冻结，第一批实现已落地并完成后端回归与脚本健康检查
 - 最新稳定验证基线：
-  - 后端测试：`132 passed`
-  - 前端测试：`17 passed`
+  - 后端测试：`143 passed`
+  - 前端测试：`19 passed`
   - 前端 `lint`：通过
   - 前端 `typecheck`：通过
   - 后端覆盖率：待本轮重新统计
 - 当前进行事项：
-  - 第四阶段最终收口检查
+  - 第五阶段后续部署说明、最低可观测性与剩余脚本收口
 - 当前待收尾事项：
-  - 视需要补跑后端覆盖率
+  - 在 PostgreSQL 与 Redis 可用的本地环境补跑完整 `smoke`
 
 ---
 
@@ -263,6 +264,40 @@
 
 ---
 
+## 第五阶段进展
+
+### 第五阶段概览
+
+- 对应计划：`phase5-implementation-plan.md`
+- 阶段目标：完成稳定性与产品化最小闭环，让当前四阶段能力更容易启动、检查、部署、排错和验收
+- 阶段状态：规划中
+
+### 第五阶段步骤记录
+
+1. 第五阶段步骤 1 已完成（2026-04-06）
+   - 完成内容：新增并冻结 `phase5-implementation-plan.md`，同步更新 `game-design-document.md`、`tech-stack.md`、`CLAUDE.md` 的第五阶段口径。
+   - 验证结果：计划文档已明确部署验收、运行检查、健康/就绪检查、配置校验、灰度配置、最低可观测性和测试入口收口要求。
+   - 备注：本阶段第一轮固定不做鉴权、登录、多租户，不引入 Kubernetes、完整 CI/CD 平台、Prometheus / Grafana 正式接入；本轮不更新 `architecture.md`，也不进入代码实现。
+
+2. 第五阶段步骤 2 已完成（2026-04-07）
+   - 完成内容：新增 `/api/ready` 就绪检查接口、production 环境禁用 `LLM_MODE=acceptance`、新增 `backend/app/services/system_service.py`，并扩展 `scripts/dev.ps1` 的 `.env` 安全检查与 `smoke` 命令入口。
+   - 验证结果：
+     - `python -m pytest backend/tests -p no:cacheprovider` -> `143 passed`
+     - `powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 health` -> 通过
+     - `git diff --check` -> 通过（仅 LF/CRLF 提示）
+   - 备注：`/api/ready` 将 PostgreSQL、Redis、文件存储定义为必需组件，将 Neo4j 定义为可选组件；可选组件失败返回 `degraded`，不阻断基础文本 RAG 就绪判断。
+
+3. 第五阶段步骤 3 已完成（2026-04-07）
+   - 完成内容：补齐 README 中的部署清单、回滚说明、排障说明，并将 `run.py`、`start.bat` 的帮助入口同步支持 `smoke`。
+   - 验证结果：
+     - `powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 help` -> 通过
+     - `powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 status` -> 通过
+     - 初次本地 smoke 结果：前端 `5173` 可达，但后端 `/api/health` 与 `/api/ready` 无法连接；结合日志确认 worker 因 Redis `127.0.0.1:6379` 拒绝连接退出，后端卡在 `Waiting for application startup.`，符合外部依赖未启动的阻塞特征
+     - 恢复 Docker Desktop、启动 `rag-postgres-pgvector` 与 `rag-redis`、并将本地 `.env` 中 `DATABASE_URL` 端口对齐为 `5433` 后，`powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 smoke` -> 通过
+   - 备注：本轮已完成一次真实本地 smoke 验证；当前 `backend`、`frontend`、`worker` 均可运行，`/api/ready` 返回 `ready`，Neo4j 仍按未配置场景走可选降级。
+
+---
+
 ## 更新时间线
 
 ### 2026-04-03
@@ -293,3 +328,6 @@
 - 更新当前自动化验证基线为后端 `132 passed`、前端 `17 passed`
 - 补齐第四阶段本地 Neo4j 人工联调步骤
 - 完成第四阶段真实 Neo4j API 联调和前端页面快照复核
+- 合并第四阶段 GraphRAG 最小闭环到本地 `main`
+- 启动第五阶段规划，新增并冻结 `phase5-implementation-plan.md`
+- 完成第五阶段第一批实现：`/api/ready`、production 配置约束、`dev.ps1 health/smoke`

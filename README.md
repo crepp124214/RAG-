@@ -55,6 +55,7 @@
 - [memory-bank/phase2-implementation-plan.md](D:\agent开发项目\RAG智能文档检索助手\memory-bank\phase2-implementation-plan.md)
 - [memory-bank/phase3-implementation-plan.md](D:\agent开发项目\RAG智能文档检索助手\memory-bank\phase3-implementation-plan.md)
 - [memory-bank/phase4-implementation-plan.md](D:\agent开发项目\RAG智能文档检索助手\memory-bank\phase4-implementation-plan.md)
+- [memory-bank/phase5-implementation-plan.md](D:\agent开发项目\RAG智能文档检索助手\memory-bank\phase5-implementation-plan.md)
 - [memory-bank/progress.md](D:\agent开发项目\RAG智能文档检索助手\memory-bank\progress.md)
 - [memory-bank/architecture.md](D:\agent开发项目\RAG智能文档检索助手\memory-bank\architecture.md)
 - [CLAUDE.md](D:\agent开发项目\RAG智能文档检索助手\CLAUDE.md)
@@ -66,6 +67,7 @@
 - `phase2-implementation-plan.md`：第二阶段计划
 - `phase3-implementation-plan.md`：第三阶段计划
 - `phase4-implementation-plan.md`：第四阶段 GraphRAG 计划与本地 Neo4j 联调步骤
+- `phase5-implementation-plan.md`：第五阶段稳定性与产品化最小闭环计划
 - `progress.md`：按顺序记录阶段进展与验收
 - `architecture.md`：当前真实结构、调用链和状态边界
 
@@ -97,6 +99,7 @@ start.bat lint
 start.bat build
 start.bat coverage
 start.bat health
+start.bat smoke
 start.bat clean
 ```
 
@@ -111,6 +114,21 @@ cd frontend && npm run test:unit -- --run
 cd frontend && npm run typecheck
 cd frontend && npm run lint
 ```
+
+推荐的第 5 阶段本地收口顺序：
+
+```bat
+start.bat health
+start.bat dev
+start.bat smoke
+start.bat check
+```
+
+其中：
+
+- `health`：检查本地依赖、关键文件、`.env` 与 production/acceptance 冲突
+- `smoke`：检查运行中的前端页面、`/api/health` 与 `/api/ready`
+- `check`：执行后端测试、前端测试、lint、typecheck
 
 ---
 
@@ -134,6 +152,13 @@ cd frontend && npm run lint
 - `NEO4J_USERNAME`
 - `NEO4J_PASSWORD`
 - `GRAPH_QUERY_LIMIT`
+
+当前第 5 阶段新增约束：
+
+- `APP_ENV=production` 时不得使用 `LLM_MODE=acceptance`
+- `NEO4J_URI` 未配置时，GraphRAG 按降级路径运行，不阻断基础文本 RAG
+- `/api/health` 只表示轻量存活状态
+- `/api/ready` 表示 PostgreSQL、Redis、文件存储和可选 Neo4j 的就绪状态
 
 当前默认值见：
 
@@ -160,14 +185,90 @@ cd frontend && npm run lint
 
 ---
 
+## 部署与验收清单
+
+本项目当前优先支持 Docker Compose / Windows 脚本路线，不包含 Kubernetes。
+
+最小本地 / 小规模部署清单：
+
+1. 准备依赖
+   - Python、Node、npm
+   - PostgreSQL + pgvector
+   - Redis
+   - Neo4j 可选
+   - 若使用 Docker Desktop，请先确认 Docker daemon 已启动
+   - 若复用项目默认本地容器，`rag-postgres-pgvector` 默认映射到 `127.0.0.1:5433`
+2. 准备配置
+   - 从 [\.env.example](D:\agent开发项目\RAG智能文档检索助手\.env.example) 复制 `.env`
+   - production 环境必须保持 `LLM_MODE=production`
+3. 应用迁移
+   - `python -m alembic upgrade head`
+4. 启动服务
+   - `start.bat dev`
+   - 或分别启动 backend / frontend / worker
+5. 执行体检
+   - `start.bat health`
+   - `start.bat smoke`
+6. 执行主链路验收
+   - 上传一个 txt 或 pdf 文档
+   - 等待文档进入 `READY`
+   - 创建会话并发送一个库内问题
+   - 检查是否返回引用
+
+---
+
+## 回滚说明
+
+当前阶段的最小回滚策略：
+
+- 如果本轮改动引发启动问题，先停止本地服务：`start.bat stop all`
+- 如果是配置问题，优先回退 `.env`
+- 如果是数据库迁移问题，暂停继续写入，并根据 Alembic 版本执行回退
+- 如果是 Neo4j 问题，可临时移除 `NEO4J_URI` 配置，让 GraphRAG 走降级路径
+- 如果只是前端开发态异常，可单独重启 `frontend`
+
+当前不提供自动化 destructive rollback 脚本，避免误删本地数据。
+
+---
+
+## 常见排障
+
+- `health` 显示 `.env missing`
+  - 从 `.env.example` 复制一份 `.env`
+- `health` 显示 `production 环境不得使用 acceptance 模式`
+  - 将 `LLM_MODE` 改回 `production`
+- `smoke` 中 `/api/ready` 返回 `not_ready`
+  - 优先检查 PostgreSQL、Redis 和文件存储目录
+- `smoke` 中 `/api/ready` 返回 `degraded`
+  - 通常表示 Neo4j 不可用；基础文本 RAG 仍可继续
+- `smoke` 中 `/api/health` 无法连接且后端日志停在 `Waiting for application startup.`
+  - 通常表示 PostgreSQL 或 Redis 未就绪，导致后端启动阶段卡住
+- `worker` 立即退出并提示 `Error 10061 connecting to 127.0.0.1:6379`
+  - 表示 Redis 未启动或端口不对
+- PostgreSQL 容器已启动但后端仍连不上数据库
+  - 检查 `.env` 里的 `DATABASE_URL` 端口是否与容器映射一致；当前默认 pgvector 容器常用 `5433`
+- 后端能启动但前端不可访问
+  - 检查 `frontend` 进程和 `5173` 端口
+- GraphRAG 不工作但文本问答正常
+  - 检查 `NEO4J_URI`、Neo4j 服务、以及 `/api/ready` 中 `neo4j` 组件状态
+
+---
+
 ## 当前验证基线
 
 当前已经实际验证通过：
 
-- 后端测试：`132 passed`
-- 前端测试：`17 passed`
+- 后端测试：`143 passed`
+- 前端测试：`19 passed`
 - 前端 `typecheck`：通过
 - 前端 `lint`：通过
+
+第五阶段当前已补齐：
+
+- `/api/ready` 就绪检查接口
+- production 环境禁用 `LLM_MODE=acceptance`
+- `scripts/dev.ps1 health` 的 `.env` 安全检查
+- `scripts/dev.ps1 smoke` 的后端/前端烟测入口
 
 第三阶段已覆盖的关键闭环：
 

@@ -67,3 +67,20 @@ def test_load_backend_settings_rejects_invalid_llm_mode() -> None:
         )
 
     assert 'LLM_MODE' in str(exc_info.value)
+
+
+def test_load_backend_settings_rejects_acceptance_mode_in_production() -> None:
+    with pytest.raises(SettingsError) as exc_info:
+        load_backend_settings(
+            env_file=None,
+            overrides={
+                'APP_ENV': 'production',
+                'DATABASE_URL': 'postgresql+psycopg://postgres:postgres@127.0.0.1:5432/rag_assistant',
+                'REDIS_URL': 'redis://127.0.0.1:6379/0',
+                'DASHSCOPE_API_KEY': 'test-key',
+                'FILE_STORAGE_PATH': './data/uploads',
+                'LLM_MODE': 'acceptance',
+            },
+        )
+
+    assert 'acceptance' in str(exc_info.value)

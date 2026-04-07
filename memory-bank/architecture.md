@@ -16,7 +16,7 @@
 ## 当前实现概览
 
 - 当前技术底座：`FastAPI + Vue 3 + PostgreSQL + pgvector + RQ + Redis + Neo4j`
-- 当前已落地能力：文档上传、异步处理、向量入库、知识库问答、会话与消息持久化、SSE 流式输出、第二阶段 Tool Calling 最小闭环、第三阶段 PDF 多模态 RAG 最小闭环、第四阶段 GraphRAG 自动化最小闭环
+- 当前已落地能力：文档上传、异步处理、向量入库、知识库问答、会话与消息持久化、SSE 流式输出、第二阶段 Tool Calling 最小闭环、第三阶段 PDF 多模态 RAG 最小闭环、第四阶段 GraphRAG 自动化最小闭环，以及第五阶段第一批产品化能力（就绪检查、配置安全校验、健康/烟测脚本入口）
 - 当前真实工具：`web_search`、`document_lookup`
 - 当前未落地能力：`python_executor`、独立图谱探索页、`graph_query` 工具、外部知识源补图、`Celery`、`Chroma`
 
@@ -82,6 +82,7 @@
 ### `scripts/`
 
 - 作用：统一开发、测试、检查、构建和覆盖率入口
+- 当前事实：`scripts/dev.ps1` 已支持 `health`（本地依赖和 `.env` 安全检查）与 `smoke`（运行中后端/前端接口烟测）命令
 
 ### `core/`
 
@@ -106,7 +107,7 @@
 
 - 作用：接口协议层
 - 当前职责：
-  - `routes/`：定义系统、文档、任务、聊天接口
+  - `routes/`：定义系统、文档、任务、聊天接口；系统路由当前暴露 `/api/health` 与 `/api/ready`
   - `schemas/`：定义请求与响应结构
   - `router.py`：统一聚合路由
   - `error_handlers.py`：统一异常输出
@@ -114,7 +115,7 @@
 ### `backend/app/settings/`
 
 - 作用：统一配置入口
-- 当前职责：从环境变量和示例配置读取后端运行参数，包括数据库、Redis、DashScope、文件存储、检索参数、搜索 Provider、第三阶段多模态配置和第四阶段 Neo4j 图谱配置
+- 当前职责：从环境变量和示例配置读取后端运行参数，包括数据库、Redis、DashScope、文件存储、检索参数、搜索 Provider、第三阶段多模态配置和第四阶段 Neo4j 图谱配置；当前已禁止在 `APP_ENV=production` 时启用 `LLM_MODE=acceptance`
 
 ### `backend/app/models/`
 
@@ -143,6 +144,7 @@
   - 聊天域服务与消息持久化
   - 第二阶段工具门控与工具编排
   - 第四阶段图证据与向量证据双路召回编排
+  - 第五阶段系统就绪检查汇总与组件状态归纳
 
 ### `backend/app/orchestrators/`
 

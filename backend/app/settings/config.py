@@ -158,6 +158,8 @@ def load_backend_settings(
     llm_mode = values.get('LLM_MODE', 'production').strip().lower() or 'production'
     if llm_mode not in ALLOWED_LLM_MODES:
         raise SettingsError('LLM_MODE 只允许为 production、acceptance')
+    if app_env == 'production' and llm_mode == 'acceptance':
+        raise SettingsError('production 环境不允许使用 acceptance 模式')
 
     dashscope_api_key = values.get('DASHSCOPE_API_KEY', '').strip() or values.get('API_KEY', '').strip()
     if not dashscope_api_key:

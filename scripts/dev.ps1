@@ -143,6 +143,56 @@ function Invoke-Step([string]$Label, [scriptblock]$Action) {
     & $Action
 }
 
+function Read-EnvFile([string]$Path) {
+    $values = @{}
+    if (-not (Test-Path $Path)) {
+        return $values
+    }
+
+    foreach ($line in Get-Content -Path $Path) {
+        $trimmed = $line.Trim()
+        if (-not $trimmed -or $trimmed.StartsWith("#")) {
+            continue
+        }
+
+        $parts = $trimmed.Split("=", 2)
+        if ($parts.Count -ne 2) {
+            continue
+        }
+
+        $values[$parts[0].Trim()] = $parts[1].Trim()
+    }
+
+    return $values
+}
+
+function Write-CheckResult([string]$Name, [string]$Level, [string]$Detail) {
+    Write-Host ("{0,-10} {1,-4} {2}" -f $Name, $Level, $Detail)
+}
+
+function Test-HttpJsonEndpoint([string]$Name, [string]$Url) {
+    try {
+        $response = Invoke-RestMethod -Uri $Url -Method Get -TimeoutSec 8
+        $status = if ($response.data.status) { $response.data.status } else { "ok" }
+        Write-CheckResult $Name "OK" "$Url ($status)"
+        return $true
+    } catch {
+        Write-CheckResult $Name "FAIL" "$Url ($($_.Exception.Message))"
+        return $false
+    }
+}
+
+function Test-HttpTextEndpoint([string]$Name, [string]$Url) {
+    try {
+        $response = Invoke-WebRequest -Uri $Url -Method Get -TimeoutSec 8
+        Write-CheckResult $Name "OK" "$Url (HTTP $($response.StatusCode))"
+        return $true
+    } catch {
+        Write-CheckResult $Name "FAIL" "$Url ($($_.Exception.Message))"
+        return $false
+    }
+}
+
 function Invoke-Health {
     $checks = @(
         @{ Name = "python"; Command = { python --version } },
@@ -153,26 +203,62 @@ function Invoke-Health {
     foreach ($check in $checks) {
         try {
             $output = & $check.Command 2>&1
-            Write-Host ("{0,-10} OK  {1}" -f $check.Name, ($output | Select-Object -First 1))
+            Write-CheckResult $check.Name "OK" ($output | Select-Object -First 1)
         } catch {
-            Write-Host ("{0,-10} FAIL {1}" -f $check.Name, $_.Exception.Message)
+            Write-CheckResult $check.Name "FAIL" $_.Exception.Message
         }
     }
 
     foreach ($path in @(".env.example", "backend/.env.example", "frontend/package.json", "frontend/tsconfig.json")) {
         $fullPath = Join-Path $ProjectRoot $path
         if (Test-Path $fullPath) {
-            Write-Host ("{0,-10} OK  {1}" -f "file", $path)
+            Write-CheckResult "file" "OK" $path
         } else {
-            Write-Host ("{0,-10} FAIL {1}" -f "file", $path)
+            Write-CheckResult "file" "FAIL" $path
         }
     }
 
     $envPath = Join-Path $ProjectRoot ".env"
-    if (Test-Path $envPath) {
-        Write-Host ("{0,-10} OK  .env" -f "config")
+    if (-not (Test-Path $envPath)) {
+        Write-CheckResult "config" "WARN" ".env missing; copy from .env.example before running full stack."
+        return
+    }
+
+    Write-CheckResult "config" "OK" ".env"
+    $envValues = Read-EnvFile $envPath
+
+    foreach ($requiredKey in @("APP_ENV", "DATABASE_URL", "REDIS_URL", "FILE_STORAGE_PATH")) {
+        if ($envValues.ContainsKey($requiredKey) -and $envValues[$requiredKey]) {
+            Write-CheckResult "env" "OK" $requiredKey
+        } else {
+            Write-CheckResult "env" "FAIL" "missing $requiredKey"
+        }
+    }
+
+    $appEnv = if ($envValues.ContainsKey("APP_ENV")) { $envValues["APP_ENV"].ToLowerInvariant() } else { "" }
+    $llmMode = if ($envValues.ContainsKey("LLM_MODE")) { $envValues["LLM_MODE"].ToLowerInvariant() } else { "" }
+    if ($appEnv -eq "production" -and $llmMode -eq "acceptance") {
+        Write-CheckResult "llm_mode" "FAIL" "production 环境不得使用 acceptance 模式"
+    } elseif ($llmMode) {
+        Write-CheckResult "llm_mode" "OK" $llmMode
     } else {
-        Write-Host ("{0,-10} WARN .env missing; copy from .env.example before running full stack." -f "config")
+        Write-CheckResult "llm_mode" "WARN" "LLM_MODE missing; backend defaults to production"
+    }
+
+    if ($envValues.ContainsKey("NEO4J_URI") -and $envValues["NEO4J_URI"]) {
+        Write-CheckResult "neo4j" "OK" "configured: $($envValues["NEO4J_URI"])"
+    } else {
+        Write-CheckResult "neo4j" "WARN" "NEO4J_URI missing; GraphRAG will use degraded path"
+    }
+}
+
+function Invoke-Smoke {
+    $backendOk = Test-HttpJsonEndpoint "backend" "http://127.0.0.1:8000/api/health"
+    $readyOk = Test-HttpJsonEndpoint "ready" "http://127.0.0.1:8000/api/ready"
+    $frontendOk = Test-HttpTextEndpoint "frontend" "http://127.0.0.1:5173"
+
+    if (-not ($backendOk -and $readyOk -and $frontendOk)) {
+        throw "Smoke check failed. Ensure backend/frontend are running and inspect readiness details."
     }
 }
 
@@ -211,7 +297,8 @@ Commands:
   check            Run tests, lint, and typecheck
   build            Run frontend production build
   coverage         Run backend coverage
-  health           Check local developer prerequisites
+  health           Check local developer prerequisites and .env safety
+  smoke            Check running backend/frontend health and readiness endpoints
   clean            Remove generated dev artifacts
   help             Show this help
 "@ | Write-Host
@@ -287,6 +374,9 @@ switch ($Command.ToLowerInvariant()) {
     }
     "health" {
         Invoke-Health
+    }
+    "smoke" {
+        Invoke-Smoke
     }
     "clean" {
         Invoke-Clean
