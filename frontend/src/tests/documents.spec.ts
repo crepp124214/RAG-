@@ -1,6 +1,10 @@
 import { createPinia, setActivePinia } from "pinia"
+import ElementPlus from "element-plus"
+import { mount } from "@vue/test-utils"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import DocumentManagerPanel from "@/components/documents/DocumentManagerPanel.vue"
+import TaskStatusPanel from "@/components/documents/TaskStatusPanel.vue"
 import { useDocumentStore } from "@/stores/documents"
 
 const serviceMocks = vi.hoisted(() => ({
@@ -192,5 +196,76 @@ describe("useDocumentStore", () => {
     await vi.advanceTimersByTimeAsync(2000)
 
     expect(serviceMocks.fetchDocument).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe("document support panels", () => {
+  it("会把文档与任务区域渲染为聊天旁的轻量支持模块", () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const store = useDocumentStore()
+    store.items = [
+      {
+        documentId: "doc-support-1",
+        taskId: "task-support-1",
+        name: "季度复盘.pdf",
+        fileType: "PDF",
+        documentStatus: "READY",
+        hasVisualAssets: true,
+        visualAssetCount: 3,
+        hasGraph: true,
+        graphStatus: "READY",
+        graphRelationCount: 12,
+        taskStatus: "READY",
+        taskType: "INGESTION",
+        errorMessage: null,
+        createdAt: "2026-04-07T08:00:00Z",
+        updatedAt: "2026-04-07T08:30:00Z",
+      },
+      {
+        documentId: "doc-support-2",
+        taskId: "task-support-2",
+        name: "客户访谈.txt",
+        fileType: "TXT",
+        documentStatus: "EMBEDDING",
+        hasVisualAssets: false,
+        visualAssetCount: 0,
+        hasGraph: false,
+        graphStatus: "PROCESSING",
+        graphRelationCount: 0,
+        taskStatus: "EMBEDDING",
+        taskType: "INGESTION",
+        errorMessage: null,
+        createdAt: "2026-04-07T08:10:00Z",
+        updatedAt: "2026-04-07T08:32:00Z",
+      },
+    ]
+    store.selectedDocumentId = "doc-support-1"
+
+    const documentWrapper = mount(DocumentManagerPanel, {
+      global: {
+        plugins: [pinia, ElementPlus],
+      },
+    })
+    const taskWrapper = mount(TaskStatusPanel, {
+      global: {
+        plugins: [pinia, ElementPlus],
+      },
+    })
+
+    expect(documentWrapper.find('[data-testid="document-support-upload"]').exists()).toBe(true)
+    expect(documentWrapper.findAll('[data-testid="recent-document-item"]')).toHaveLength(2)
+    expect(documentWrapper.find('[data-testid="selected-document-detail"]').text()).toContain("季度复盘.pdf")
+    expect(documentWrapper.find('[data-testid="delete-document-action"]').exists()).toBe(true)
+    expect(documentWrapper.find('[data-testid="selected-graph-status"]').text()).toBe("READY")
+    expect(documentWrapper.find('[data-testid="selected-graph-relations"]').text()).toBe("12")
+    expect(documentWrapper.text()).toContain("任务状态")
+    expect(documentWrapper.text()).toContain("图谱状态")
+
+    expect(taskWrapper.find('[data-testid="task-summary-已跟踪文档"]').exists()).toBe(true)
+    expect(taskWrapper.find('[data-testid="task-summary-value-已跟踪文档"]').text()).toBe("2")
+    expect(taskWrapper.find('[data-testid="task-summary-value-处理中任务"]').text()).toBe("1")
+    expect(taskWrapper.find('[data-testid="task-summary-value-最近状态"]').text()).toBe("READY")
+    expect(taskWrapper.find('[data-testid="task-summary-value-最近文档"]').text()).toBe("季度复盘.pdf")
   })
 })

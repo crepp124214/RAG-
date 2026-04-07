@@ -43,18 +43,21 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="sub-panel">
+  <section class="sub-panel support-module-panel">
     <div class="panel-header">
-      <div>
-        <h2>文档管理</h2>
-        <span>上传、查看并删除当前工作区的知识库文档</span>
+      <div class="panel-copy">
+        <p class="support-eyebrow">支持模块</p>
+        <h2>知识库支持</h2>
+        <span>上传资料、查看最近文档，并快速确认当前知识库上下文。</span>
       </div>
       <el-button
+        data-testid="document-support-upload"
         type="primary"
+        size="small"
         :loading="documentStore.isUploading"
         @click="openFilePicker"
       >
-        上传文档
+        上传资料
       </el-button>
       <input
         ref="fileInputRef"
@@ -92,11 +95,16 @@ onBeforeUnmount(() => {
       description="页面会根据本地保存的文档清单恢复上传记录和任务状态。"
     />
 
-    <div class="document-layout">
-      <div class="document-list">
-        <div class="summary-row">
-          <el-tag type="info">已跟踪 {{ documentStore.trackedCount }} 份</el-tag>
-          <el-tag type="warning">处理中 {{ documentStore.activeTaskCount }} 份</el-tag>
+    <div class="summary-row support-summary-row">
+      <el-tag type="info" size="small">已跟踪 {{ documentStore.trackedCount }} 份</el-tag>
+      <el-tag type="warning" size="small">处理中 {{ documentStore.activeTaskCount }} 份</el-tag>
+    </div>
+
+    <div class="support-stack">
+      <div class="support-block">
+        <div class="support-block-header">
+          <h3>最近文档</h3>
+          <span>保留最近状态，方便聊天时快速切换证据。</span>
         </div>
 
         <el-empty
@@ -104,28 +112,37 @@ onBeforeUnmount(() => {
           description="还没有已跟踪的文档，请先上传 PDF、DOCX 或 TXT 文件。"
         />
 
-        <button
-          v-for="item in documentStore.items"
+        <div
           v-else
-          :key="item.documentId"
-          class="document-card"
-          :class="{ active: item.documentId === documentStore.selectedDocumentId }"
-          @click="documentStore.setSelectedDocument(item.documentId)"
+          class="recent-document-list"
         >
-          <div class="document-card-top">
-            <strong>{{ item.name }}</strong>
-            <el-tag size="small">{{ item.fileType }}</el-tag>
-          </div>
-          <div class="document-card-meta">
-            <span>文档状态：{{ item.documentStatus }}</span>
-            <span>任务状态：{{ item.taskStatus }}</span>
-            <span>视觉资产：{{ item.visualAssetCount }}</span>
-            <span>图谱状态：{{ item.graphStatus }}</span>
-          </div>
-        </button>
+          <button
+            v-for="item in documentStore.items"
+            :key="item.documentId"
+            data-testid="recent-document-item"
+            class="document-card"
+            :class="{ active: item.documentId === documentStore.selectedDocumentId }"
+            @click="documentStore.setSelectedDocument(item.documentId)"
+          >
+            <div class="document-card-top">
+              <strong>{{ item.name }}</strong>
+              <el-tag size="small" effect="plain">{{ item.fileType }}</el-tag>
+            </div>
+            <div class="document-card-meta">
+              <span>文档 {{ item.documentStatus }}</span>
+              <span>任务 {{ item.taskStatus }}</span>
+              <span>图谱 {{ item.graphStatus }}</span>
+            </div>
+          </button>
+        </div>
       </div>
 
-      <div class="document-detail">
+      <div class="support-block document-detail">
+        <div class="support-block-header">
+          <h3>当前选中</h3>
+          <span>仅保留聊天前需要确认的关键信息。</span>
+        </div>
+
         <el-empty
           v-if="!selectedItem"
           description="选中文档后，这里会显示详情、任务状态和失败原因。"
@@ -133,13 +150,15 @@ onBeforeUnmount(() => {
 
         <template v-else>
           <div class="detail-header">
-            <div>
+            <div data-testid="selected-document-detail">
               <h3>{{ selectedItem.name }}</h3>
               <p>文档 ID：{{ selectedItem.documentId }}</p>
             </div>
             <el-button
+              data-testid="delete-document-action"
               type="danger"
               plain
+              size="small"
               @click="handleDelete(selectedItem.documentId)"
             >
               删除文档
@@ -169,11 +188,11 @@ onBeforeUnmount(() => {
             </div>
             <div class="detail-item">
               <span>图谱状态</span>
-              <strong>{{ selectedItem.graphStatus }}</strong>
+              <strong data-testid="selected-graph-status">{{ selectedItem.graphStatus }}</strong>
             </div>
             <div class="detail-item">
-              <span>图谱关系数</span>
-              <strong>{{ selectedItem.graphRelationCount }}</strong>
+              <span>图谱关系</span>
+              <strong data-testid="selected-graph-relations">{{ selectedItem.graphRelationCount }}</strong>
             </div>
           </div>
 
@@ -227,16 +246,59 @@ onBeforeUnmount(() => {
   display: none;
 }
 
-.document-layout {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(0, 1fr);
+.support-module-panel {
+  gap: 14px;
 }
 
-.document-list,
+.panel-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.panel-copy h2,
+.support-block-header h3 {
+  margin: 0;
+}
+
+.support-eyebrow {
+  margin: 0;
+  color: #0f766e;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.support-summary-row {
+  margin-top: 4px;
+}
+
+.support-stack,
 .document-detail {
   display: grid;
-  gap: 12px;
+  gap: 10px;
+}
+
+.support-block {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.9);
+  padding: 14px;
+}
+
+.support-block-header {
+  display: grid;
+  gap: 4px;
+}
+
+.support-block-header span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.recent-document-list {
+  display: grid;
+  gap: 8px;
 }
 
 .summary-row {
@@ -247,19 +309,20 @@ onBeforeUnmount(() => {
 
 .document-card {
   width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 16px;
-  background: #f8fafc;
-  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 12px;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .document-card:hover,
 .document-card.active {
   border-color: rgba(15, 118, 110, 0.45);
   transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(148, 163, 184, 0.14);
 }
 
 .document-card-top {
@@ -298,12 +361,12 @@ onBeforeUnmount(() => {
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .detail-item {
-  padding: 12px 14px;
-  border-radius: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
   background: #f8fafc;
   display: grid;
   gap: 4px;
