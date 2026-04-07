@@ -90,7 +90,10 @@ async function send() {
           }}
         </p>
       </div>
-      <div v-if="chatStore.selectedSession" class="session-stage-meta">
+      <div
+        v-if="chatStore.selectedSession"
+        class="session-stage-meta"
+      >
         <span>知识工作区</span>
       </div>
     </header>

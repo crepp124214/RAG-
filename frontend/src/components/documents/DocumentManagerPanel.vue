@@ -96,8 +96,18 @@ onBeforeUnmount(() => {
     />
 
     <div class="summary-row support-summary-row">
-      <el-tag type="info" size="small">已跟踪 {{ documentStore.trackedCount }} 份</el-tag>
-      <el-tag type="warning" size="small">处理中 {{ documentStore.activeTaskCount }} 份</el-tag>
+      <el-tag
+        type="info"
+        size="small"
+      >
+        已跟踪 {{ documentStore.trackedCount }} 份
+      </el-tag>
+      <el-tag
+        type="warning"
+        size="small"
+      >
+        处理中 {{ documentStore.activeTaskCount }} 份
+      </el-tag>
     </div>
 
     <div class="support-stack">
@@ -126,7 +136,12 @@ onBeforeUnmount(() => {
           >
             <div class="document-card-top">
               <strong>{{ item.name }}</strong>
-              <el-tag size="small" effect="plain">{{ item.fileType }}</el-tag>
+              <el-tag
+                size="small"
+                effect="plain"
+              >
+                {{ item.fileType }}
+              </el-tag>
             </div>
             <div class="document-card-meta">
               <span>文档 {{ item.documentStatus }}</span>
