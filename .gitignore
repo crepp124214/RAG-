@@ -182,8 +182,22 @@ frontend/coverage/
 .dev/
 .worktrees/
 .playwright-cli/
+.playwright-mcp/
 output/
 data/uploads/
+
+# Claude Code 和 Superpowers 本地文件
+.claude/
+.superpowers/
+docs/superpowers/
+
+# 开发过程文档（非项目运行必需）
+memory-bank/
+
+# 测试脚本
+scripts/smoke_flow.py
+backend/tests/test_dev_script.py
+backend/tests/test_smoke_flow_script.py
 
 # OS generated files
 .DS_Store
