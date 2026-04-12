@@ -1,0 +1,128 @@
+/* 自然有机设计系统 - 全局样式 */
+
+/* 导入 Google Fonts - Fraunces (优雅衬线) */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&display=swap');
+
+/* 导入 Inter (现代无衬线) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* 导入霞鹜文楷 (中文书法字体) - 使用 CDN */
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/style.css');
+
+/* 全局重置和基础样式 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "LXGW WenKai", "Source Han Serif SC", "Noto Serif SC", Georgia, serif;
+  line-height: 1.7;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(201, 184, 154, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(179, 159, 127, 0.5);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(179, 159, 127, 0.7);
+}
+
+/* 选中文本样式 */
+::selection {
+  background: rgba(235, 190, 148, 0.3);
+  color: inherit;
+}
+
+/* 焦点样式 */
+:focus-visible {
+  outline: 2px solid rgba(209, 102, 69, 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* 按钮和交互元素的过渡 */
+button,
+a,
+input,
+textarea,
+select {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 减少动画（无障碍支持） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Element Plus 组件自定义样式 */
+.el-button {
+  border-radius: 12px 16px 14px 18px / 14px 18px 16px 12px !important;
+  font-family: "LXGW WenKai", serif !important;
+  font-weight: 600 !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.el-button--primary {
+  background: linear-gradient(135deg, #d16645, #e08515) !important;
+  border-color: #d16645 !important;
+}
+
+.el-button--primary:hover {
+  background: linear-gradient(135deg, #b84d32, #ba6512) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(209, 102, 69, 0.3) !important;
+}
+
+.el-button--primary:active {
+  transform: translateY(0);
+}
+
+.el-tag {
+  border-radius: 8px 10px 9px 11px / 9px 11px 10px 8px !important;
+  font-family: "Inter", sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.el-alert {
+  border-radius: 14px 18px 16px 20px / 16px 20px 18px 14px !important;
+  border-width: 1.5px !important;
+}
+
+.el-empty {
+  padding: 32px 20px !important;
+}
+
+.el-empty__description {
+  color: rgba(125, 107, 82, 0.7) !important;
+  font-family: "LXGW WenKai", serif !important;
+}

@@ -43,13 +43,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="sub-panel support-module-panel">
+  <section class="document-panel">
     <div class="panel-header">
-      <div class="panel-copy">
-        <p class="support-eyebrow">支持模块</p>
-        <h2>知识库支持</h2>
-        <span>上传资料、查看最近文档，并快速确认当前知识库上下文。</span>
-      </div>
+      <h3>知识库</h3>
       <el-button
         data-testid="document-support-upload"
         type="primary"
@@ -57,7 +53,7 @@ onBeforeUnmount(() => {
         :loading="documentStore.isUploading"
         @click="openFilePicker"
       >
-        上传资料
+        上传
       </el-button>
       <input
         ref="fileInputRef"
@@ -73,7 +69,6 @@ onBeforeUnmount(() => {
       :closable="false"
       type="error"
       show-icon
-      title="上传失败"
       :description="documentStore.uploadError"
     />
 
@@ -82,176 +77,84 @@ onBeforeUnmount(() => {
       :closable="false"
       type="warning"
       show-icon
-      title="文档操作异常"
       :description="documentStore.actionError"
     />
 
-    <el-alert
-      v-else-if="documentStore.isHydrating"
-      :closable="false"
-      type="info"
-      show-icon
-      title="正在恢复文档状态"
-      description="页面会根据本地保存的文档清单恢复上传记录和任务状态。"
-    />
-
-    <div class="summary-row support-summary-row">
-      <el-tag
-        type="info"
-        size="small"
-      >
-        已跟踪 {{ documentStore.trackedCount }} 份
+    <div class="summary-tags">
+      <el-tag type="info" size="small">
+        已跟踪 {{ documentStore.trackedCount }}
       </el-tag>
-      <el-tag
-        type="warning"
-        size="small"
-      >
-        处理中 {{ documentStore.activeTaskCount }} 份
+      <el-tag type="warning" size="small">
+        处理中 {{ documentStore.activeTaskCount }}
       </el-tag>
     </div>
 
-    <div class="support-stack">
-      <div class="support-block">
-        <div class="support-block-header">
-          <h3>最近文档</h3>
-          <span>保留最近状态，方便聊天时快速切换证据。</span>
+    <el-empty
+      v-if="documentStore.items.length === 0"
+      description="暂无文档"
+    />
+
+    <div v-else class="document-list">
+      <button
+        v-for="item in documentStore.items"
+        :key="item.documentId"
+        data-testid="recent-document-item"
+        class="document-card"
+        :class="{ active: item.documentId === documentStore.selectedDocumentId }"
+        @click="documentStore.setSelectedDocument(item.documentId)"
+      >
+        <div class="doc-header">
+          <strong>{{ item.name }}</strong>
+          <el-tag size="small" effect="plain">{{ item.fileType }}</el-tag>
         </div>
+        <div class="doc-meta">
+          <span>{{ item.taskStatus }}</span>
+          <span v-if="item.graphStatus !== 'NONE'">图谱: {{ item.graphStatus }}</span>
+        </div>
+      </button>
+    </div>
 
-        <el-empty
-          v-if="documentStore.items.length === 0"
-          description="还没有已跟踪的文档，请先上传 PDF、DOCX 或 TXT 文件。"
-        />
-
-        <div
-          v-else
-          class="recent-document-list"
+    <!-- 选中文档详情 -->
+    <div v-if="selectedItem" class="document-detail">
+      <div class="detail-header">
+        <h4>{{ selectedItem.name }}</h4>
+        <el-button
+          data-testid="delete-document-action"
+          type="danger"
+          plain
+          size="small"
+          @click="handleDelete(selectedItem.documentId)"
         >
-          <button
-            v-for="item in documentStore.items"
-            :key="item.documentId"
-            data-testid="recent-document-item"
-            class="document-card"
-            :class="{ active: item.documentId === documentStore.selectedDocumentId }"
-            @click="documentStore.setSelectedDocument(item.documentId)"
-          >
-            <div class="document-card-top">
-              <strong>{{ item.name }}</strong>
-              <el-tag
-                size="small"
-                effect="plain"
-              >
-                {{ item.fileType }}
-              </el-tag>
-            </div>
-            <div class="document-card-meta">
-              <span>文档 {{ item.documentStatus }}</span>
-              <span>任务 {{ item.taskStatus }}</span>
-              <span>图谱 {{ item.graphStatus }}</span>
-            </div>
-          </button>
+          删除
+        </el-button>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span>状态</span>
+          <strong>{{ selectedItem.taskStatus }}</strong>
+        </div>
+        <div class="detail-item">
+          <span>类型</span>
+          <strong>{{ selectedItem.fileType }}</strong>
+        </div>
+        <div class="detail-item" v-if="selectedItem.graphRelationCount > 0">
+          <span>图谱关系</span>
+          <strong data-testid="selected-graph-relations">{{ selectedItem.graphRelationCount }}</strong>
+        </div>
+        <div class="detail-item" v-if="selectedItem.visualAssetCount > 0">
+          <span>视觉资产</span>
+          <strong>{{ selectedItem.visualAssetCount }}</strong>
         </div>
       </div>
 
-      <div class="support-block document-detail">
-        <div class="support-block-header">
-          <h3>当前选中</h3>
-          <span>仅保留聊天前需要确认的关键信息。</span>
-        </div>
-
-        <el-empty
-          v-if="!selectedItem"
-          description="选中文档后，这里会显示详情、任务状态和失败原因。"
-        />
-
-        <template v-else>
-          <div class="detail-header">
-            <div data-testid="selected-document-detail">
-              <h3>{{ selectedItem.name }}</h3>
-              <p>文档 ID：{{ selectedItem.documentId }}</p>
-            </div>
-            <el-button
-              data-testid="delete-document-action"
-              type="danger"
-              plain
-              size="small"
-              @click="handleDelete(selectedItem.documentId)"
-            >
-              删除文档
-            </el-button>
-          </div>
-
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span>文件类型</span>
-              <strong>{{ selectedItem.fileType }}</strong>
-            </div>
-            <div class="detail-item">
-              <span>文档状态</span>
-              <strong>{{ selectedItem.documentStatus }}</strong>
-            </div>
-            <div class="detail-item">
-              <span>任务状态</span>
-              <strong>{{ selectedItem.taskStatus }}</strong>
-            </div>
-            <div class="detail-item">
-              <span>视觉资产</span>
-              <strong>{{ selectedItem.visualAssetCount }}</strong>
-            </div>
-            <div class="detail-item">
-              <span>任务类型</span>
-              <strong>{{ selectedItem.taskType }}</strong>
-            </div>
-            <div class="detail-item">
-              <span>图谱状态</span>
-              <strong data-testid="selected-graph-status">{{ selectedItem.graphStatus }}</strong>
-            </div>
-            <div class="detail-item">
-              <span>图谱关系</span>
-              <strong data-testid="selected-graph-relations">{{ selectedItem.graphRelationCount }}</strong>
-            </div>
-          </div>
-
-          <el-alert
-            v-if="selectedItem.hasGraph"
-            :closable="false"
-            type="info"
-            show-icon
-            title="图谱构建已就绪"
-            :description="`当前文档已构建 ${selectedItem.graphRelationCount} 条图谱关系，可用于关系型问答。`"
-          />
-
-          <el-alert
-            v-else-if="selectedItem.graphStatus === 'FAILED'"
-            :closable="false"
-            type="warning"
-            show-icon
-            title="图谱构建失败"
-            description="文本问答仍可继续使用，但当前文档暂时无法提供图谱证据。"
-          />
-
-          <el-alert
-            v-if="selectedItem.hasVisualAssets"
-            :closable="false"
-            type="success"
-            show-icon
-            title="已生成视觉描述"
-            :description="`当前文档已提取 ${selectedItem.visualAssetCount} 条视觉资产，可用于图表和图片相关问答。`"
-          />
-
-          <el-alert
-            v-if="selectedItem.errorMessage"
-            :closable="false"
-            type="error"
-            show-icon
-            title="任务失败"
-            :description="selectedItem.errorMessage"
-          />
-
-          <p class="detail-timestamp">
-            最后更新时间：{{ selectedItem.updatedAt }}
-          </p>
-        </template>
-      </div>
+      <el-alert
+        v-if="selectedItem.errorMessage"
+        :closable="false"
+        type="error"
+        show-icon
+        :description="selectedItem.errorMessage"
+      />
     </div>
   </section>
 </template>
@@ -261,145 +164,144 @@ onBeforeUnmount(() => {
   display: none;
 }
 
-.support-module-panel {
-  gap: 14px;
+.document-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.panel-copy {
-  display: grid;
-  gap: 4px;
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(201, 184, 154, 0.15);
 }
 
-.panel-copy h2,
-.support-block-header h3 {
+.panel-header h3 {
   margin: 0;
+  font-size: 15px;
+  font-family: "Fraunces", "LXGW WenKai", serif;
+  font-weight: 600;
+  color: var(--color-earth-900);
 }
 
-.support-eyebrow {
-  margin: 0;
-  color: #0f766e;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.support-summary-row {
-  margin-top: 4px;
-}
-
-.support-stack,
-.document-detail {
-  display: grid;
-  gap: 10px;
-}
-
-.support-block {
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 16px;
-  background: rgba(248, 250, 252, 0.9);
-  padding: 14px;
-}
-
-.support-block-header {
-  display: grid;
-  gap: 4px;
-}
-
-.support-block-header span {
-  color: #64748b;
-  font-size: 12px;
-}
-
-.recent-document-list {
-  display: grid;
-  gap: 8px;
-}
-
-.summary-row {
+.summary-tags {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+}
+
+.document-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .document-card {
   width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 14px;
-  background: #ffffff;
+  border: 1px solid rgba(201, 184, 154, 0.2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
   padding: 12px;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.document-card:hover,
-.document-card.active {
-  border-color: rgba(15, 118, 110, 0.45);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(148, 163, 184, 0.14);
-}
-
-.document-card-top {
+  transition: all 0.2s ease;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.document-card-meta {
-  display: grid;
-  gap: 4px;
-  color: #475569;
+.document-card:hover {
+  border-color: var(--color-earth-400);
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.document-card.active {
+  border-color: var(--color-moss-500);
+  background: rgba(246, 248, 244, 0.9);
+  border-left-width: 3px;
+  padding-left: 10px;
+}
+
+.doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.doc-header strong {
+  font-family: "LXGW WenKai", serif;
+  font-weight: 600;
+  color: var(--color-earth-900);
   font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.doc-meta {
+  display: flex;
+  gap: 8px;
+  color: var(--color-earth-600);
+  font-size: 11px;
+}
+
+.document-detail {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(201, 184, 154, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .detail-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
-  align-items: flex-start;
 }
 
-.detail-header h3,
-.detail-header p {
+.detail-header h4 {
   margin: 0;
-}
-
-.detail-header p {
-  margin-top: 6px;
-  color: #64748b;
-  font-size: 13px;
+  font-size: 14px;
+  font-family: "Fraunces", "LXGW WenKai", serif;
+  font-weight: 600;
+  color: var(--color-earth-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
 }
 
 .detail-item {
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #f8fafc;
-  display: grid;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(249, 246, 240, 0.6);
+  border: 1px solid rgba(201, 184, 154, 0.15);
+  display: flex;
+  flex-direction: column;
   gap: 4px;
 }
 
-.detail-item span,
-.detail-timestamp {
-  color: #64748b;
-  font-size: 13px;
+.detail-item span {
+  color: var(--color-earth-600);
+  font-size: 11px;
 }
 
-@media (max-width: 900px) {
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .detail-header {
-    flex-direction: column;
-  }
+.detail-item strong {
+  color: var(--color-earth-900);
+  font-size: 13px;
+  font-weight: 600;
 }
 </style>

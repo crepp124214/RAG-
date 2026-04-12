@@ -59,46 +59,65 @@ onMounted(() => {
 
 <style scoped>
 .sessions-panel {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   min-height: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
 }
 
 .panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
 }
 
 .panel-header h2 {
-  font-size: 14px;
+  font-size: 15px;
+  font-family: "Fraunces", "LXGW WenKai", serif;
+  font-weight: 600;
+  color: var(--color-earth-900);
 }
 
 .session-list {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   min-height: 0;
-  align-content: start;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .session-card {
   width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 14px;
-  background: rgba(248, 250, 252, 0.9);
-  padding: 10px 12px;
+  border: 1px solid rgba(201, 184, 154, 0.2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 12px 14px;
   text-align: left;
   cursor: pointer;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
-.session-card.active,
 .session-card:hover {
-  border-color: rgba(15, 118, 110, 0.45);
-  background: rgba(240, 253, 250, 0.92);
+  border-color: var(--color-earth-400);
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateX(2px);
+}
+
+.session-card.active {
+  border-color: var(--color-terracotta-500);
+  background: rgba(253, 246, 243, 0.9);
+  border-left-width: 3px;
+  padding-left: 12px;
 }
 
 .session-card strong {
@@ -106,10 +125,15 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
+  font-weight: 600;
+  color: var(--color-earth-900);
+  font-family: "LXGW WenKai", serif;
+  line-height: 1.4;
 }
 
 .session-card span {
-  color: #64748b;
-  font-size: 12px;
+  color: var(--color-earth-600);
+  font-size: 11px;
+  opacity: 0.8;
 }
 </style>

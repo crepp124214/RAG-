@@ -14,92 +14,84 @@ const statusRows = computed(() => [
 </script>
 
 <template>
-  <section class="sub-panel support-module-panel">
+  <section class="task-panel">
     <div class="panel-header">
-      <div class="panel-copy">
-        <p class="support-eyebrow">支持模块</p>
-        <h2>任务摘要</h2>
-        <span>保留关键处理进展，帮助你确认当前资料是否已准备好进入问答流。</span>
-      </div>
+      <h3>任务摘要</h3>
     </div>
 
-    <div class="support-block">
-      <ul class="status-list">
-        <li
-          v-for="row in statusRows"
-          :key="row.label"
-          :data-testid="`task-summary-${row.label}`"
-        >
-          <span>{{ row.label }}</span>
-          <strong :data-testid="`task-summary-value-${row.label}`">{{ row.value }}</strong>
-        </li>
-      </ul>
+    <ul class="status-list">
+      <li
+        v-for="row in statusRows"
+        :key="row.label"
+        :data-testid="`task-summary-${row.label}`"
+      >
+        <span>{{ row.label }}</span>
+        <strong :data-testid="`task-summary-value-${row.label}`">{{ row.value }}</strong>
+      </li>
+    </ul>
 
-      <p class="status-hint">
-        任务状态会在页面打开期间自动轮询；刷新后会从本地保存的文档清单恢复。
-      </p>
-    </div>
+    <p class="status-hint">
+      任务状态会自动轮询更新
+    </p>
   </section>
 </template>
 
 <style scoped>
-.support-module-panel {
-  display: grid;
-  gap: 12px;
+.task-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.panel-copy {
-  display: grid;
-  gap: 4px;
+.panel-header {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(201, 184, 154, 0.15);
 }
 
-.panel-copy h2 {
+.panel-header h3 {
   margin: 0;
-}
-
-.support-eyebrow {
-  margin: 0;
-  color: #0f766e;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.support-block {
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 16px;
-  background: rgba(248, 250, 252, 0.9);
-  padding: 14px;
+  font-size: 15px;
+  font-family: "Fraunces", "LXGW WenKai", serif;
+  font-weight: 600;
+  color: var(--color-earth-900);
 }
 
 .status-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: grid;
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .status-list li {
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #ffffff;
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  color: #334155;
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(249, 246, 240, 0.6);
+  border: 1px solid rgba(201, 184, 154, 0.15);
 }
 
-.status-list span,
+.status-list li span {
+  color: var(--color-earth-600);
+  font-size: 13px;
+}
+
+.status-list li strong {
+  color: var(--color-earth-900);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .status-hint {
-  color: #64748b;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(201, 184, 154, 0.15);
+  color: var(--color-earth-600);
   font-size: 12px;
-}
-
-.status-hint {
-  margin: 12px 0 0;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 </style>
