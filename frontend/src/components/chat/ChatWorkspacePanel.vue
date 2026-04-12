@@ -71,19 +71,32 @@ async function send() {
 </script>
 
 <template>
-  <section class="panel chat-panel">
-    <div class="panel-header">
-      <div>
-        <h2>聊天工作台</h2>
-        <span>
+  <section class="panel chat-panel workspace-stage">
+    <header class="panel-header session-stage-header">
+      <div class="session-stage-copy">
+        <span class="session-stage-eyebrow">当前知识会话</span>
+        <h2>
           {{
             chatStore.selectedSession
-              ? `当前会话：${chatStore.selectedSession.title}`
-              : "暂无会话，发送第一条消息时会自动创建会话"
+              ? chatStore.selectedSession.title
+              : "从这里开始你的第一条知识对话"
           }}
-        </span>
+        </h2>
+        <p>
+          {{
+            chatStore.selectedSession
+              ? "围绕当前会话持续整理问题、答案、引用和工具结果。"
+              : "暂无会话，发送第一条消息时会自动创建会话。"
+          }}
+        </p>
       </div>
-    </div>
+      <div
+        v-if="chatStore.selectedSession"
+        class="session-stage-meta"
+      >
+        <span>知识工作区</span>
+      </div>
+    </header>
 
     <el-alert
       v-if="chatStore.errorMessage"
@@ -94,7 +107,7 @@ async function send() {
       :description="chatStore.errorMessage"
     />
 
-    <div class="message-list">
+    <div class="message-list conversation-stream">
       <el-empty
         v-if="!chatStore.isLoadingMessages && chatStore.messages.length === 0"
         description="发送第一条问题后，这里会展示知识库回答和引用。"
@@ -104,11 +117,14 @@ async function send() {
         v-for="message in chatStore.messages"
         v-else
         :key="message.id"
-        class="message-card"
+        class="message-card workspace-turn"
         :class="message.role"
       >
         <header class="message-header">
-          <strong>{{ message.role === "user" ? "用户" : "助手" }}</strong>
+          <div class="message-speaker">
+            <strong>{{ message.role === "user" ? "你" : "知识助手" }}</strong>
+            <span>{{ message.role === "user" ? "提问与指令" : "回答与依据" }}</span>
+          </div>
           <span v-if="message.isStreaming">流式生成中...</span>
         </header>
         <p class="message-content">{{ message.content || "..." }}</p>
@@ -154,17 +170,21 @@ async function send() {
       </article>
     </div>
 
-    <div class="composer">
+    <div class="composer workspace-composer">
+      <div class="composer-heading">
+        <strong>继续当前工作区</strong>
+        <span>在这里继续整理问题、结论或下一步动作</span>
+      </div>
       <el-input
         v-model="draft"
         type="textarea"
         :rows="4"
         resize="none"
-        placeholder="请输入你想从知识库中查询的问题。"
+        placeholder="继续输入你的问题、总结或需要助手展开的方向。"
         @keydown.ctrl.enter.prevent="send"
       />
       <div class="composer-actions">
-        <span>按 Ctrl + Enter 发送</span>
+        <span>Ctrl + Enter 发送</span>
         <el-button
           type="primary"
           :loading="chatStore.isSending"
@@ -179,33 +199,115 @@ async function send() {
 </template>
 
 <style scoped>
-.message-list {
-  min-height: 320px;
+.workspace-stage {
   display: grid;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.06);
+}
+
+.session-stage-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.session-stage-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.session-stage-eyebrow {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.session-stage-copy h2 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.session-stage-copy p {
+  margin: 0;
+  max-width: 720px;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.session-stage-meta {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.04);
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.message-list {
+  min-height: 420px;
+  display: grid;
+  gap: 0;
+}
+
+.conversation-stream {
+  padding: 0 8px 0 0;
 }
 
 .message-card {
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: #f8fafc;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  padding: 20px 8px 22px;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.workspace-turn:last-child {
+  border-bottom: none;
 }
 
 .message-card.user {
-  background: #ecfeff;
+  background: transparent;
 }
 
 .message-card.assistant {
-  background: #f8fafc;
+  background: transparent;
 }
 
 .message-header {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  align-items: flex-start;
+}
+
+.message-speaker {
+  display: grid;
+  gap: 4px;
+}
+
+.message-speaker strong {
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.message-speaker span {
+  color: #64748b;
+  font-size: 12px;
 }
 
 .message-header span {
@@ -216,7 +318,8 @@ async function send() {
 .message-content {
   margin: 0;
   white-space: pre-wrap;
-  line-height: 1.7;
+  color: #1e293b;
+  line-height: 1.9;
 }
 
 .citation-list {
@@ -299,7 +402,30 @@ async function send() {
 
 .composer {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+}
+
+.workspace-composer {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.composer-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.composer-heading strong {
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.composer-heading span {
+  color: #64748b;
+  font-size: 13px;
 }
 
 .composer-actions {
@@ -307,5 +433,21 @@ async function send() {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
+}
+
+:deep(.workspace-composer .el-textarea__inner) {
+  min-height: 132px !important;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: none;
+  background: rgba(248, 250, 252, 0.8);
+  color: #0f172a;
+  line-height: 1.8;
+}
+
+:deep(.workspace-composer .el-textarea__inner:focus) {
+  border-color: rgba(15, 118, 110, 0.42);
+  background: #ffffff;
 }
 </style>

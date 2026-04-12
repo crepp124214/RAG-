@@ -11,6 +11,57 @@ describe("ChatWorkspacePanel", () => {
     setActivePinia(createPinia())
   })
 
+  it("会将聊天区渲染为以会话头部和连续消息工作区为核心的主舞台", async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const store = useChatStore()
+    store.sessions = [
+      {
+        id: "session-stage-1",
+        title: "产品路线讨论",
+        created_at: "2026-04-07T09:00:00Z",
+        updated_at: "2026-04-07T10:00:00Z",
+      },
+    ]
+    store.selectedSessionId = "session-stage-1"
+    store.messages = [
+      {
+        id: "user-stage-1",
+        sessionId: "session-stage-1",
+        role: "user",
+        content: "请整理这个季度的发布重点。",
+        createdAt: "2026-04-07T10:00:00Z",
+        updatedAt: "2026-04-07T10:00:00Z",
+        citations: [],
+        toolCalls: [],
+      },
+      {
+        id: "assistant-stage-1",
+        sessionId: "session-stage-1",
+        role: "assistant",
+        content: "我已经整理出一版重点摘要。",
+        createdAt: "2026-04-07T10:01:00Z",
+        updatedAt: "2026-04-07T10:01:00Z",
+        citations: [],
+        toolCalls: [],
+      },
+    ]
+
+    const wrapper = mount(ChatWorkspacePanel, {
+      global: {
+        plugins: [pinia, ElementPlus],
+      },
+    })
+
+    expect(wrapper.text()).toContain("产品路线讨论")
+    expect(wrapper.findAll("article")).toHaveLength(2)
+    expect(wrapper.text()).toContain("请整理这个季度的发布重点。")
+    expect(wrapper.text()).toContain("我已经整理出一版重点摘要。")
+    expect(wrapper.find("textarea").exists()).toBe(true)
+    expect(wrapper.find("button").exists()).toBe(true)
+    expect(wrapper.text()).toContain("发送问题")
+  })
+
   it("会渲染 pending 的工具调用卡片", async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
