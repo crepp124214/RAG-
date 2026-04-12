@@ -16,7 +16,7 @@ exit /b %errorlevel%
 echo RAG developer entrypoint
 echo.
 echo Usage:
-echo   start.bat [dev^|all^|backend^|frontend^|worker^|stop^|status^|test^|check^|build^|coverage^|lint^|health^|smoke^|clean^|help]
+echo   start.bat [dev^|all^|backend^|frontend^|worker^|stop^|status^|test^|check^|build^|coverage^|lint^|health^|smoke^|acceptance^|smoke-flow^|clean^|help]
 echo.
 echo Examples:
 echo   start.bat

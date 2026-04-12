@@ -10,6 +10,7 @@
 - 第二阶段：Tool Calling 最小闭环
 - 第三阶段：PDF 多模态 RAG 前后端最小闭环
 - 第四阶段：GraphRAG 自动化最小闭环
+- 第五阶段：产品化最小闭环实施中，已完成 readiness、smoke、acceptance、smoke-flow 与最低可观测性首批收口
 
 当前技术底座：
 
@@ -100,6 +101,8 @@ start.bat build
 start.bat coverage
 start.bat health
 start.bat smoke
+start.bat acceptance
+start.bat smoke-flow
 start.bat clean
 ```
 
@@ -121,13 +124,17 @@ cd frontend && npm run lint
 start.bat health
 start.bat dev
 start.bat smoke
+start.bat acceptance
+start.bat smoke-flow
 start.bat check
 ```
 
 其中：
 
 - `health`：检查本地依赖、关键文件、`.env` 与 production/acceptance 冲突
-- `smoke`：检查运行中的前端页面、`/api/health` 与 `/api/ready`
+- `smoke`：检查运行中的前端页面、`/api/health`、`/api/ready` 与 readiness 组件明细
+- `acceptance`：在 `smoke` 基础上补充 `backend/frontend/worker` 进程状态和必需组件验收
+- `smoke-flow`：真实走一次“上传文档 -> 等待 READY -> 发起问答 -> 校验引用 -> 删除文档”的主链路烟测
 - `check`：执行后端测试、前端测试、lint、typecheck
 
 ---
@@ -209,6 +216,8 @@ start.bat check
 5. 执行体检
    - `start.bat health`
    - `start.bat smoke`
+   - `start.bat acceptance`
+   - `start.bat smoke-flow`
 6. 执行主链路验收
    - 上传一个 txt 或 pdf 文档
    - 等待文档进入 `READY`
@@ -241,6 +250,10 @@ start.bat check
   - 优先检查 PostgreSQL、Redis 和文件存储目录
 - `smoke` 中 `/api/ready` 返回 `degraded`
   - 通常表示 Neo4j 不可用；基础文本 RAG 仍可继续
+- `acceptance` 提示 `worker-proc FAIL`
+  - 表示 worker 没有通过 `scripts/dev.ps1` 启动，或对应 PID 已失效
+- `smoke-flow` 提示任务长时间未进入 `READY`
+  - 优先检查 worker、Redis、模型侧依赖和上传文档处理链路
 - `smoke` 中 `/api/health` 无法连接且后端日志停在 `Waiting for application startup.`
   - 通常表示 PostgreSQL 或 Redis 未就绪，导致后端启动阶段卡住
 - `worker` 立即退出并提示 `Error 10061 connecting to 127.0.0.1:6379`
@@ -269,6 +282,12 @@ start.bat check
 - production 环境禁用 `LLM_MODE=acceptance`
 - `scripts/dev.ps1 health` 的 `.env` 安全检查
 - `scripts/dev.ps1 smoke` 的后端/前端烟测入口
+- `scripts/dev.ps1 acceptance` 的部署验收入口
+- `scripts/dev.ps1 smoke-flow` 的主链路烟测入口
+- 应用启动日志 `app.startup_started / app.startup_completed`
+- `/api/ready` 结构化日志 `system.readiness_checked`
+- `worker.main` 生命周期结构化日志与 Redis 连接失败上下文
+- 本地运行产物默认忽略：`.playwright-cli/`、`output/`、`data/uploads/`
 
 第三阶段已覆盖的关键闭环：
 

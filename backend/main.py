@@ -33,9 +33,23 @@ def create_app(settings: BackendSettings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI):
         if app.state.settings is None:
             app.state.settings = get_backend_settings()
+        log_event(
+            logger,
+            logging.INFO,
+            "app.startup_started",
+            app_name=app.state.settings.app_name,
+            app_env=app.state.settings.app_env,
+        )
         app.state.db_engine = create_database_engine(app.state.settings.database_url)
         check_database_connection(app.state.db_engine)
         app.state.db_session_factory = create_session_factory(app.state.db_engine)
+        log_event(
+            logger,
+            logging.INFO,
+            "app.startup_completed",
+            app_name=app.state.settings.app_name,
+            app_env=app.state.settings.app_env,
+        )
         yield
         app.state.db_engine.dispose()
 

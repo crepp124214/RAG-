@@ -31,7 +31,7 @@ def print_help() -> None:
     print("RAG智能文档检索助手开发辅助入口")
     print()
     print("用法:")
-    print("  python run.py [dev|all|backend|frontend|worker|stop|status|test|check|build|coverage|lint|health|smoke|clean|test-backend|test-frontend]")
+    print("  python run.py [dev|all|backend|frontend|worker|stop|status|test|check|build|coverage|lint|health|smoke|acceptance|smoke-flow|clean|test-backend|test-frontend]")
     print()
     print("示例:")
     print("  python run.py dev")
@@ -53,7 +53,7 @@ def main() -> int:
         argv = ["cmd", "/c", "scripts\\test_frontend.bat"]
     else:
         resolved_command = COMMAND_ALIASES.get(command, command)
-        allowed = {"dev", "backend", "frontend", "worker", "stop", "status", "test", "check", "build", "coverage", "lint", "health", "smoke", "clean"}
+        allowed = {"dev", "backend", "frontend", "worker", "stop", "status", "test", "check", "build", "coverage", "lint", "health", "smoke", "acceptance", "smoke-flow", "clean"}
         if resolved_command not in allowed:
             print(f"未知命令: {command}")
             print()

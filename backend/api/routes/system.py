@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from backend.api.schemas.response import success_response
 from backend.app.services.system_service import build_readiness_report
+from backend.infrastructure.observability import log_event
 
 
 router = APIRouter(tags=['system'])
+logger = logging.getLogger(__name__)
 
 
 @router.get('/health')
@@ -29,6 +33,15 @@ async def readiness_check(request: Request) -> JSONResponse:
     report = build_readiness_report(
         settings=request.app.state.settings,
         db_engine=request.app.state.db_engine,
+    )
+    log_event(
+        logger,
+        logging.INFO,
+        "system.readiness_checked",
+        status=report.status,
+        ready=report.ready,
+        degraded=report.degraded,
+        component_count=len(report.components),
     )
     return JSONResponse(
         status_code=report.http_status,

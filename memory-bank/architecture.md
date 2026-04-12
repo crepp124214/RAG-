@@ -16,9 +16,9 @@
 ## 当前实现概览
 
 - 当前技术底座：`FastAPI + Vue 3 + PostgreSQL + pgvector + RQ + Redis + Neo4j`
-- 当前已落地能力：文档上传、异步处理、向量入库、知识库问答、会话与消息持久化、SSE 流式输出、第二阶段 Tool Calling 最小闭环、第三阶段 PDF 多模态 RAG 最小闭环、第四阶段 GraphRAG 自动化最小闭环，以及第五阶段第一批产品化能力（就绪检查、配置安全校验、健康/烟测脚本入口）
+- 当前已落地能力：文档上传、异步处理、向量入库、知识库问答、会话与消息持久化、SSE 流式输出、第二阶段 Tool Calling 最小闭环、第三阶段 PDF 多模态 RAG 最小闭环、第四阶段 GraphRAG 最小闭环、第五阶段产品化最小闭环（健康检查、就绪检查、配置校验、部署验收、烟雾测试、最低可观测性）
 - 当前真实工具：`web_search`、`document_lookup`
-- 当前未落地能力：`python_executor`、独立图谱探索页、`graph_query` 工具、外部知识源补图、`Celery`、`Chroma`
+- 当前未落地能力：`python_executor`、独立图谱探索页、`graph_query` 工具、外部知识源补图、鉴权、登录、多租户、Kubernetes、完整 CI/CD 平台、Prometheus/Grafana 正式接入
 
 ---
 
@@ -48,6 +48,10 @@
 
 - 作用：记录第四阶段 GraphRAG 最小闭环计划与本地 Neo4j 联调步骤
 
+### `memory-bank/phase5-implementation-plan.md`
+
+- 作用：记录第五阶段产品化最小闭环计划
+
 ### `memory-bank/progress.md`
 
 - 作用：按时间顺序记录阶段进展、验证结果和当前状态
@@ -74,6 +78,7 @@
 
 - 作用：RQ Worker 入口
 - 当前职责：消费文档异步处理任务与后置图谱构建任务
+- 当前事实：Worker 启动链路会输出 Redis 连接成功/失败、worker 配置完成、运行完成/失败等结构化生命周期日志
 
 ### `memory-bank/`
 
@@ -82,7 +87,14 @@
 ### `scripts/`
 
 - 作用：统一开发、测试、检查、构建和覆盖率入口
-- 当前事实：`scripts/dev.ps1` 已支持 `health`（本地依赖和 `.env` 安全检查）与 `smoke`（运行中后端/前端接口烟测）命令
+- 当前事实：`scripts/dev.ps1` 已支持 `health`（本地依赖和 `.env` 安全检查）、`smoke`（运行中后端/前端接口烟测与 readiness 组件明细）、`acceptance`（部署验收入口，附带 worker 进程状态）和 `smoke-flow`（真实上传/问答主链路烟测）命令
+
+### 运行产物忽略规则
+
+- `.playwright-cli/`：本地页面快照和浏览器会话输出
+- `output/`：临时产物与手工检查输出
+- `data/uploads/`：本地上传文件存储目录
+- 说明：当前只通过 `.gitignore` 忽略这些运行产物，不提供自动删除脚本
 
 ### `core/`
 
@@ -102,6 +114,7 @@
 
 - 作用：FastAPI 应用入口与应用工厂
 - 职责：加载配置、建立数据库与请求上下文、挂载 `/api` 路由、注册异常处理
+- 当前事实：应用生命周期会输出 `app.startup_started` 与 `app.startup_completed` 结构化日志
 
 ### `backend/api/`
 
@@ -201,6 +214,7 @@
 
 - 作用：结构化日志与请求上下文
 - 当前职责：统一日志字段、`request_id` 透传和关键链路日志
+- 当前事实：除请求开始/结束日志外，当前还覆盖应用启动生命周期日志、系统就绪检查日志与 worker 生命周期日志
 
 ### `backend/tests/`
 

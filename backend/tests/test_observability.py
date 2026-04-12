@@ -7,6 +7,7 @@ import pytest
 from backend.app.models import Session as ChatSession
 from backend.app.services import document_service as document_service_module
 from backend.app.services.chat_service import ChatService
+from backend.app.services.system_service import ReadinessComponent, ReadinessSummary
 from backend.infrastructure.observability import reset_request_id, set_request_id
 from backend.tests.support import create_initialized_test_client
 
@@ -43,6 +44,47 @@ def test_health_endpoint_sets_request_id_header_and_emits_request_logs(caplog: p
     assert '"event": "request.started"' in messages
     assert '"event": "request.completed"' in messages
     assert '"request_id":' in messages
+
+
+def test_app_startup_emits_lifecycle_logs(caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level(logging.INFO):
+        with create_initialized_test_client():
+            pass
+
+    messages = "\n".join(record.message for record in caplog.records)
+    assert '"event": "app.startup_started"' in messages
+    assert '"event": "app.startup_completed"' in messages
+
+
+def test_ready_endpoint_emits_structured_readiness_log(caplog: pytest.LogCaptureFixture) -> None:
+    with create_initialized_test_client() as (client, _, _):
+        from backend.api.routes import system
+
+        original = system.build_readiness_report
+        system.build_readiness_report = lambda **_: ReadinessSummary(
+            app_name='RAG测试应用',
+            app_env='test',
+            llm_mode='production',
+            status='degraded',
+            ready=True,
+            degraded=True,
+            http_status=200,
+            components=[
+                ReadinessComponent(name='database', label='PostgreSQL', status='ready', required=True),
+                ReadinessComponent(name='neo4j', label='Neo4j', status='failed', required=False),
+            ],
+        )
+        try:
+            with caplog.at_level(logging.INFO):
+                response = client.get("/api/ready")
+        finally:
+            system.build_readiness_report = original
+
+    assert response.status_code == 200
+    messages = "\n".join(record.message for record in caplog.records)
+    assert '"event": "system.readiness_checked"' in messages
+    assert '"status": "degraded"' in messages
+    assert '"ready": true' in messages
 
 
 def test_document_upload_emits_structured_log(

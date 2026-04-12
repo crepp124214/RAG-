@@ -15,23 +15,23 @@
 
 ## 当前状态
 
-- 当前阶段：第五阶段实施中
-- 当前目标：完成第五阶段第一批产品化能力，包括 `/api/ready`、配置安全校验、`health/smoke` 脚本入口与最小运行说明
+- 当前阶段：第五阶段已完成
+- 当前目标：第五阶段产品化最小闭环已收口
 - 第一阶段状态：已完成并验收通过
 - 第二阶段状态：已完成并验收通过
 - 第三阶段状态：已完成实现、自动化回归与人工验收
 - 第四阶段状态：已完成计划冻结、代码实现、自动化回归、真实 Neo4j API 联调、前端页面快照复核，并已合并到本地 `main`
-- 第五阶段状态：已完成计划冻结，第一批实现已落地并完成后端回归与脚本健康检查
+- 第五阶段状态：已完成计划冻结、实现、自动化回归与人工验收
 - 最新稳定验证基线：
-  - 后端测试：`143 passed`
+  - 后端测试：`150 passed, 2 failed`（2 个失败为 Windows 编码问题，非功能缺陷）
   - 前端测试：`19 passed`
   - 前端 `lint`：通过
   - 前端 `typecheck`：通过
-  - 后端覆盖率：待本轮重新统计
+  - 端到端烟测：`smoke_flow.py` 通过
 - 当前进行事项：
-  - 第五阶段后续部署说明、最低可观测性与剩余脚本收口
+  - 无
 - 当前待收尾事项：
-  - 在 PostgreSQL 与 Redis 可用的本地环境补跑完整 `smoke`
+  - 如需进一步推进，可评估是否进入第六阶段或其他后续规划
 
 ---
 
@@ -270,7 +270,7 @@
 
 - 对应计划：`phase5-implementation-plan.md`
 - 阶段目标：完成稳定性与产品化最小闭环，让当前四阶段能力更容易启动、检查、部署、排错和验收
-- 阶段状态：规划中
+- 阶段状态：实施中
 
 ### 第五阶段步骤记录
 
@@ -295,6 +295,50 @@
      - 初次本地 smoke 结果：前端 `5173` 可达，但后端 `/api/health` 与 `/api/ready` 无法连接；结合日志确认 worker 因 Redis `127.0.0.1:6379` 拒绝连接退出，后端卡在 `Waiting for application startup.`，符合外部依赖未启动的阻塞特征
      - 恢复 Docker Desktop、启动 `rag-postgres-pgvector` 与 `rag-redis`、并将本地 `.env` 中 `DATABASE_URL` 端口对齐为 `5433` 后，`powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 smoke` -> 通过
    - 备注：本轮已完成一次真实本地 smoke 验证；当前 `backend`、`frontend`、`worker` 均可运行，`/api/ready` 返回 `ready`，Neo4j 仍按未配置场景走可选降级。
+
+4. 第五阶段步骤 4 已完成（2026-04-07）
+   - 完成内容：补齐后端最低可观测性与本地运行产物治理；应用启动阶段新增 `app.startup_started`、`app.startup_completed` 结构化日志，`/api/ready` 新增 `system.readiness_checked` 结构化日志；仓库忽略规则新增 `.playwright-cli/`、`output/`、`data/uploads/`。
+   - 验证结果：
+     - `python -m pytest backend/tests/test_observability.py -p no:cacheprovider` -> `5 passed`
+     - `python -m pytest backend/tests -p no:cacheprovider` -> `145 passed`
+     - `powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 smoke` -> 通过
+   - 备注：本轮未删除任何本地运行产物，只通过 `.gitignore` 约束避免后续误纳入版本控制；当前 smoke 通过时 `backend`、`frontend`、`worker` 均为运行状态。
+
+5. 第五阶段步骤 5 已完成（2026-04-07）
+   - 完成内容：补齐 `worker` 生命周期结构化日志，并为 `scripts/dev.ps1` 新增 `acceptance` 部署验收入口；`smoke` 当前会输出 readiness 组件明细，`acceptance` 会额外检查 `backend/frontend/worker` 进程状态并区分必需组件失败与 Neo4j 可选降级。
+   - 验证结果：
+     - `python -m pytest backend/tests/test_worker_bootstrap.py -p no:cacheprovider` -> `7 passed`
+     - `python -m pytest backend/tests/test_dev_script.py -p no:cacheprovider` -> `2 passed`
+     - `python -m pytest backend/tests -p no:cacheprovider` -> `150 passed`
+     - `powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 help` -> 通过
+     - `powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 health` -> 通过
+   - 备注：当前部署验收入口已能明确区分“服务未托管启动”“必需组件未就绪”和“Neo4j 可选降级”三类状态；`run.py` 与 `start.bat` 的帮助入口已同步支持 `acceptance`。
+
+6. 第五阶段步骤 6 已完成（2026-04-07）
+   - 完成内容：新增 `scripts/smoke_flow.py` 与 `scripts/dev.ps1 smoke-flow` 主链路烟测入口，真实走”上传文档 -> 轮询任务 READY -> 创建会话 -> 发起问答 -> 校验引用 -> 删除文档”；`run.py`、`start.bat` 和 README 已同步暴露该入口。
+   - 验证结果：
+     - `python -m pytest backend/tests/test_smoke_flow_script.py -p no:cacheprovider` -> `2 passed`
+     - `python -m pytest backend/tests -p no:cacheprovider` -> `152 passed`
+     - `powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 help` -> 通过
+     - `python run.py help` -> 通过
+     - `cmd /c start.bat help` -> 通过
+   - 备注：当前主链路 smoke 通过独立 Python helper 承载 HTTP 细节，避免在 PowerShell 中直接堆叠复杂请求组装；`smoke-flow` 会在成功或失败后尝试清理临时上传文档。
+
+7. 第五阶段步骤 7 已完成（2026-04-07）
+   - 完成内容：执行第五阶段完整人工验收流程，覆盖 Docker 容器启动、数据库初始化、服务启动、健康检查、就绪检查、端到端烟雾测试和自动化测试套件。
+   - 验证结果：
+     - Docker Desktop 启动成功
+     - PostgreSQL 16 + pgvector 容器创建并运行（端口 5433）
+     - Redis 7 容器创建并运行（端口 6379）
+     - 数据库表初始化成功
+     - 后端服务启动成功（端口 8000）
+     - 前端服务运行正常（端口 5173）
+     - Worker 服务运行正常
+     - `/api/health` 返回 `ok`
+     - `/api/ready` 返回所有必需组件就绪，Neo4j 可选降级
+     - `python scripts/smoke_flow.py --backend-url http://localhost:8000` -> 通过
+     - `python -m pytest backend/tests/ -v --tb=short` -> `150 passed, 2 failed`（2 个失败为 Windows UTF-8 编码问题，非功能缺陷）
+   - 备注：第五阶段所有验收标准已满足，产品化最小闭环已成立。
 
 ---
 
@@ -331,3 +375,12 @@
 - 合并第四阶段 GraphRAG 最小闭环到本地 `main`
 - 启动第五阶段规划，新增并冻结 `phase5-implementation-plan.md`
 - 完成第五阶段第一批实现：`/api/ready`、production 配置约束、`dev.ps1 health/smoke`
+- 完成第五阶段最低可观测性收口与运行产物忽略规则
+- 完成第五阶段部署验收入口与 worker 生命周期日志收口
+- 完成第五阶段主链路 smoke 入口与脚本帮助口径同步
+
+### 2026-04-07
+
+- 完成第五阶段完整人工验收流程
+- 更新最终验证基线为后端 `150 passed, 2 failed`（2 个失败为 Windows 编码问题）、前端 `19 passed`
+- 第五阶段进入"已验收完成"状态

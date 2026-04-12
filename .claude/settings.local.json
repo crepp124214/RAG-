@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 help)",
+      "Bash(powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 health)"
+    ]
+  }
+}

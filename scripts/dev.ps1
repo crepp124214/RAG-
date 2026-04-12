@@ -36,6 +36,9 @@ $Services = @{
     }
 }
 
+$BackendCheckUrl = if ($env:RAG_DEV_BACKEND_URL) { $env:RAG_DEV_BACKEND_URL.TrimEnd('/') } else { $Services.backend.Url }
+$FrontendCheckUrl = if ($env:RAG_DEV_FRONTEND_URL) { $env:RAG_DEV_FRONTEND_URL.TrimEnd('/') } else { $Services.frontend.Url }
+
 function Ensure-DevDirectories {
     foreach ($path in @($DevRoot, $PidRoot, $LogRoot)) {
         if (-not (Test-Path $path)) {
@@ -182,6 +185,74 @@ function Test-HttpJsonEndpoint([string]$Name, [string]$Url) {
     }
 }
 
+function Invoke-JsonEndpointDetailed([string]$Name, [string]$Url) {
+    $request = [System.Net.HttpWebRequest]::Create($Url)
+    $request.Method = "GET"
+    $request.Timeout = 8000
+
+    $response = $null
+    $errorDetail = $null
+    try {
+        $response = $request.GetResponse()
+    } catch [System.Net.WebException] {
+        $response = $_.Exception.Response
+        $errorDetail = $_.Exception.Message
+    } catch {
+        return @{
+            Name = $Name
+            Success = $false
+            HttpStatus = 0
+            Payload = $null
+            ErrorDetail = $_.Exception.Message
+        }
+    }
+
+    if ($null -eq $response) {
+        return @{
+            Name = $Name
+            Success = $false
+            HttpStatus = 0
+            Payload = $null
+            ErrorDetail = $errorDetail
+        }
+    }
+
+    $statusCode = 0
+    $bodyText = $null
+    try {
+        $statusCode = [int]$response.StatusCode
+    } catch {
+        $statusCode = 0
+    }
+
+    try {
+        $reader = New-Object System.IO.StreamReader($response.GetResponseStream())
+        $bodyText = $reader.ReadToEnd()
+        $reader.Close()
+    } catch {
+        $bodyText = $null
+    } finally {
+        $response.Close()
+    }
+
+    $payload = $null
+    if ($bodyText) {
+        try {
+            $payload = $bodyText | ConvertFrom-Json
+        } catch {
+            $payload = $null
+        }
+    }
+
+    return @{
+        Name = $Name
+        Success = ($statusCode -ge 200 -and $statusCode -lt 400)
+        HttpStatus = $statusCode
+        Payload = $payload
+        ErrorDetail = $errorDetail
+    }
+}
+
 function Test-HttpTextEndpoint([string]$Name, [string]$Url) {
     try {
         $response = Invoke-WebRequest -Uri $Url -Method Get -TimeoutSec 8
@@ -190,6 +261,109 @@ function Test-HttpTextEndpoint([string]$Name, [string]$Url) {
     } catch {
         Write-CheckResult $Name "FAIL" "$Url ($($_.Exception.Message))"
         return $false
+    }
+}
+
+function Get-ReadyPayloadData([hashtable]$Result) {
+    if ($null -eq $Result.Payload) {
+        return $null
+    }
+    if ($null -eq $Result.Payload.data) {
+        return $null
+    }
+    return $Result.Payload.data
+}
+
+function Write-ReadinessComponents($Components) {
+    if ($null -eq $Components) {
+        Write-CheckResult "ready" "FAIL" "missing readiness component details"
+        return $false
+    }
+
+    $allRequiredHealthy = $true
+    foreach ($component in $Components) {
+        $detail = if ($component.detail) { $component.detail } else { "" }
+        $requiredText = if ($component.required) { "required" } else { "optional" }
+        $message = "$($component.label) [$requiredText]"
+        if ($detail) {
+            $message = "$message - $detail"
+        }
+
+        switch ($component.status) {
+            "ready" {
+                Write-CheckResult $component.name "OK" $message
+            }
+            "skipped" {
+                Write-CheckResult $component.name "WARN" $message
+            }
+            "failed" {
+                if ($component.required) {
+                    Write-CheckResult $component.name "FAIL" $message
+                    $allRequiredHealthy = $false
+                } else {
+                    Write-CheckResult $component.name "WARN" $message
+                }
+            }
+            default {
+                Write-CheckResult $component.name "WARN" "$message - unexpected status: $($component.status)"
+                if ($component.required) {
+                    $allRequiredHealthy = $false
+                }
+            }
+        }
+    }
+
+    return $allRequiredHealthy
+}
+
+function Test-ManagedServiceState([string]$Name, [bool]$Required) {
+    $process = Get-ServiceProcess $Name
+    if ($null -eq $process) {
+        $level = if ($Required) { "FAIL" } else { "WARN" }
+        $detail = if ($Required) {
+            "not running under scripts/dev.ps1"
+        } else {
+            "not managed by scripts/dev.ps1"
+        }
+        Write-CheckResult "$Name-proc" $level $detail
+        return $false
+    }
+
+    Write-CheckResult "$Name-proc" "OK" "PID $($process.Id)"
+    return $true
+}
+
+function Test-ReadyEndpoint([string]$BaseUrl) {
+    $url = "$BaseUrl/api/ready"
+    $result = Invoke-JsonEndpointDetailed "ready" $url
+    if ($null -eq $result.Payload) {
+        Write-CheckResult "ready" "FAIL" "$url ($($result.ErrorDetail))"
+        return @{
+            Passed = $false
+            RequiredHealthy = $false
+        }
+    }
+
+    $data = Get-ReadyPayloadData $result
+    if ($null -eq $data) {
+        Write-CheckResult "ready" "FAIL" "$url (missing payload data)"
+        return @{
+            Passed = $false
+            RequiredHealthy = $false
+        }
+    }
+
+    $summaryLevel = if ($data.ready) {
+        if ($data.degraded) { "WARN" } else { "OK" }
+    } else {
+        "FAIL"
+    }
+    Write-CheckResult "ready" $summaryLevel "$url ($($data.status))"
+    $requiredHealthy = Write-ReadinessComponents $data.components
+
+    return @{
+        Passed = [bool]$data.ready
+        RequiredHealthy = $requiredHealthy
     }
 }
 
@@ -253,13 +427,44 @@ function Invoke-Health {
 }
 
 function Invoke-Smoke {
-    $backendOk = Test-HttpJsonEndpoint "backend" "http://127.0.0.1:8000/api/health"
-    $readyOk = Test-HttpJsonEndpoint "ready" "http://127.0.0.1:8000/api/ready"
-    $frontendOk = Test-HttpTextEndpoint "frontend" "http://127.0.0.1:5173"
+    $backendOk = Test-HttpJsonEndpoint "backend" "$BackendCheckUrl/api/health"
+    $readyResult = Test-ReadyEndpoint $BackendCheckUrl
+    $frontendOk = Test-HttpTextEndpoint "frontend" $FrontendCheckUrl
 
-    if (-not ($backendOk -and $readyOk -and $frontendOk)) {
+    if (-not ($backendOk -and $readyResult.Passed -and $frontendOk)) {
         throw "Smoke check failed. Ensure backend/frontend are running and inspect readiness details."
     }
+}
+
+function Invoke-Acceptance {
+    $backendProcessOk = Test-ManagedServiceState "backend" $false
+    $frontendProcessOk = Test-ManagedServiceState "frontend" $false
+    $workerProcessOk = Test-ManagedServiceState "worker" $true
+
+    $backendOk = Test-HttpJsonEndpoint "backend" "$BackendCheckUrl/api/health"
+    $readyResult = Test-ReadyEndpoint $BackendCheckUrl
+    $frontendOk = Test-HttpTextEndpoint "frontend" $FrontendCheckUrl
+
+    if ($backendOk -and -not $backendProcessOk) {
+        Write-CheckResult "backend" "WARN" "health endpoint reachable but backend is not managed by scripts/dev.ps1"
+    }
+    if ($frontendOk -and -not $frontendProcessOk) {
+        Write-CheckResult "frontend" "WARN" "frontend endpoint reachable but frontend is not managed by scripts/dev.ps1"
+    }
+
+    $acceptancePassed = $backendOk -and $readyResult.Passed -and $readyResult.RequiredHealthy -and $frontendOk -and $workerProcessOk
+    if (-not $acceptancePassed) {
+        [Console]::Error.WriteLine("acceptance FAIL: inspect readiness components, service state, and endpoint availability above.")
+        throw "Acceptance check failed."
+    }
+
+    Write-Host "acceptance OK: backend, frontend, worker, and required readiness components passed."
+}
+
+function Invoke-SmokeFlow {
+    Invoke-Smoke
+    Write-CheckResult "smoke-flow" "OK" "starting end-to-end upload/query verification"
+    & python (Join-Path $ProjectRoot "scripts\smoke_flow.py") --backend-url $BackendCheckUrl
 }
 
 function Invoke-Clean {
@@ -299,6 +504,8 @@ Commands:
   coverage         Run backend coverage
   health           Check local developer prerequisites and .env safety
   smoke            Check running backend/frontend health and readiness endpoints
+  acceptance       Run acceptance-oriented checks with readiness details and worker status
+  smoke-flow       Run end-to-end upload/query smoke flow against the live backend
   clean            Remove generated dev artifacts
   help             Show this help
 "@ | Write-Host
@@ -377,6 +584,12 @@ switch ($Command.ToLowerInvariant()) {
     }
     "smoke" {
         Invoke-Smoke
+    }
+    "acceptance" {
+        Invoke-Acceptance
+    }
+    "smoke-flow" {
+        Invoke-SmokeFlow
     }
     "clean" {
         Invoke-Clean
