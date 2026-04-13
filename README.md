@@ -79,7 +79,7 @@ python run.py dev
 
 ```bash
 # 1. 克隆仓库
-git clone <repository-url>
+git clone https://github.com/crepp124214/RAG-.git
 cd RAG智能文档检索助手
 
 # 2. 配置环境变量
