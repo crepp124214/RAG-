@@ -14,22 +14,31 @@ class DashScopeEmbeddingClient:
         if not texts:
             return []
 
-        response = TextEmbedding.call(
-            model=self.model,
-            input=texts,
-            api_key=self.api_key,
-        )
+        # DashScope API 限制每次最多 25 个文本
+        batch_size = 25
+        all_vectors = []
 
-        status_code = getattr(response, "status_code", 500)
-        if status_code != 200:
-            message = getattr(response, "message", "embedding request failed")
-            raise AppError(f"向量化失败: {message}", code="embedding_failed", status_code=502)
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i + batch_size]
 
-        output = getattr(response, "output", {}) or {}
-        embeddings = output.get("embeddings", [])
-        vectors = [item["embedding"] for item in embeddings if "embedding" in item]
+            response = TextEmbedding.call(
+                model=self.model,
+                input=batch,
+                api_key=self.api_key,
+            )
 
-        if len(vectors) != len(texts):
-            raise AppError("向量化结果数量不匹配", code="embedding_result_mismatch", status_code=502)
+            status_code = getattr(response, "status_code", 500)
+            if status_code != 200:
+                message = getattr(response, "message", "embedding request failed")
+                raise AppError(f"向量化失败: {message}", code="embedding_failed", status_code=502)
 
-        return vectors
+            output = getattr(response, "output", {}) or {}
+            embeddings = output.get("embeddings", [])
+            vectors = [item["embedding"] for item in embeddings if "embedding" in item]
+
+            if len(vectors) != len(batch):
+                raise AppError("向量化结果数量不匹配", code="embedding_result_mismatch", status_code=502)
+
+            all_vectors.extend(vectors)
+
+        return all_vectors
