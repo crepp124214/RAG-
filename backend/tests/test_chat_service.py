@@ -9,6 +9,16 @@ from backend.infrastructure.database import create_database_engine, create_sessi
 from backend.tests.support import create_workspace_temp_dir
 
 
+class FakeChatClient:
+    def __init__(self, response: str = "自动生成的标题") -> None:
+        self.response = response
+        self.calls: list[dict] = []
+
+    def generate(self, *, system_prompt: str, user_prompt: str) -> str:
+        self.calls.append({"system_prompt": system_prompt, "user_prompt": user_prompt})
+        return self.response
+
+
 class FakeQAService:
     def __init__(self, result: QAResult, *, error: Exception | None = None) -> None:
         self.result = result
@@ -299,3 +309,197 @@ def test_stream_query_emits_tool_events_and_summary() -> None:
     assert events[1].data["tool_name"] == "web_search"
     assert events[2].data["status"] == "success"
     assert events[-1].data["tool_calls"][0]["tool_name"] == "web_search"
+
+
+def test_update_session_changes_title() -> None:
+    temp_dir = create_workspace_temp_dir("chat-service-update")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'chat.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+    service = ChatService(qa_service=FakeQAService(QAResult(answer="ok", citations=[], tool_calls=[])))
+    session_id = create_session_record(session_factory, title="旧标题")
+
+    with session_factory() as db_session:
+        updated_session = service.update_session(db_session, session_id=session_id, title="新标题")
+
+    engine.dispose()
+
+    assert updated_session.title == "新标题"
+
+
+def test_update_session_raises_for_missing_session() -> None:
+    temp_dir = create_workspace_temp_dir("chat-service-update")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'chat.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+    service = ChatService(qa_service=FakeQAService(QAResult(answer="ok", citations=[], tool_calls=[])))
+
+    with session_factory() as db_session:
+        try:
+            service.update_session(db_session, session_id="missing", title="新标题")
+        except AppError as exc:
+            assert exc.code == "session_not_found"
+        else:  # pragma: no cover
+            raise AssertionError("expected session_not_found")
+
+    engine.dispose()
+
+
+def test_search_sessions_filters_by_keyword() -> None:
+    temp_dir = create_workspace_temp_dir("chat-service-search")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'chat.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+    service = ChatService(qa_service=FakeQAService(QAResult(answer="ok", citations=[], tool_calls=[])))
+    create_session_record(session_factory, title="Python 编程问题")
+    create_session_record(session_factory, title="JavaScript 开发")
+    create_session_record(session_factory, title="Python 数据分析")
+
+    with session_factory() as db_session:
+        results = service.search_sessions(db_session, keyword="Python")
+
+    engine.dispose()
+
+    assert len(results) == 2
+    assert all("Python" in session.title for session in results)
+
+
+def test_search_sessions_returns_all_when_keyword_empty() -> None:
+    temp_dir = create_workspace_temp_dir("chat-service-search")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'chat.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+    service = ChatService(qa_service=FakeQAService(QAResult(answer="ok", citations=[], tool_calls=[])))
+    create_session_record(session_factory, title="会话1")
+    create_session_record(session_factory, title="会话2")
+
+    with session_factory() as db_session:
+        results = service.search_sessions(db_session, keyword="")
+
+    engine.dispose()
+
+    assert len(results) == 2
+
+
+def test_generate_session_title_uses_llm_when_available() -> None:
+    temp_dir = create_workspace_temp_dir("chat-service-title")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'chat.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+    chat_client = FakeChatClient(response="LLM生成的标题")
+    service = ChatService(qa_service=FakeQAService(QAResult(answer="ok", citations=[], tool_calls=[])), chat_client=chat_client)
+    session_id = create_session_record(session_factory)
+
+    with session_factory() as db_session:
+        service.query(db_session, session_id=session_id, query="如何学习Python")
+        title = service.generate_session_title(db_session, session_id=session_id)
+
+    engine.dispose()
+
+    assert title == "LLM生成的标题"
+    assert len(chat_client.calls) == 1
+
+
+def test_generate_session_title_falls_back_when_llm_fails() -> None:
+    temp_dir = create_workspace_temp_dir("chat-service-title")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'chat.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+
+    class FailingChatClient:
+        def generate(self, *, system_prompt: str, user_prompt: str) -> str:
+            raise Exception("LLM调用失败")
+
+    service = ChatService(qa_service=FakeQAService(QAResult(answer="ok", citations=[], tool_calls=[])), chat_client=FailingChatClient())
+    session_id = create_session_record(session_factory)
+
+    with session_factory() as db_session:
+        service.query(db_session, session_id=session_id, query="这是一个很长的问题用于测试标题生成")
+        title = service.generate_session_title(db_session, session_id=session_id)
+
+    engine.dispose()
+
+    assert title.startswith("这是一个很长的问题")
+
+
+def test_generate_session_title_raises_for_empty_session() -> None:
+    temp_dir = create_workspace_temp_dir("chat-service-title")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'chat.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+    service = ChatService(qa_service=FakeQAService(QAResult(answer="ok", citations=[], tool_calls=[])))
+    session_id = create_session_record(session_factory)
+
+    with session_factory() as db_session:
+        try:
+            service.generate_session_title(db_session, session_id=session_id)
+        except AppError as exc:
+            assert exc.code == "session_empty"
+        else:  # pragma: no cover
+            raise AssertionError("expected session_empty")
+
+    engine.dispose()
+
+
+def test_export_session_markdown_includes_messages_and_citations() -> None:
+    temp_dir = create_workspace_temp_dir("chat-service-export")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'chat.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+    qa_service = FakeQAService(
+        QAResult(
+            answer="这是回答",
+            citations=[
+                RetrievedChunk(
+                    chunk_id="chunk-1",
+                    document_id="doc-1",
+                    document_name="demo.txt",
+                    chunk_index=0,
+                    content="这是引用内容",
+                    page_number=1,
+                    source_type="text",
+                    asset_label=None,
+                    preview_available=False,
+                    score=0.9,
+                )
+            ],
+            tool_calls=[],
+        )
+    )
+    service = ChatService(qa_service=qa_service)
+    session_id = create_session_record(session_factory, title="测试会话")
+
+    with session_factory() as db_session:
+        service.query(db_session, session_id=session_id, query="测试问题")
+        service.update_session(db_session, session_id=session_id, title="测试会话")
+        title, markdown = service.export_session_markdown(db_session, session_id=session_id)
+
+    engine.dispose()
+
+    assert title == "测试会话"
+    assert "# 测试会话" in markdown
+    assert "## 用户" in markdown
+    assert "测试问题" in markdown
+    assert "## 助手" in markdown
+    assert "这是回答" in markdown
+    assert "### 引用" in markdown
+    assert "demo.txt" in markdown
+    assert "这是引用内容" in markdown
+
+
+def test_export_session_markdown_raises_for_missing_session() -> None:
+    temp_dir = create_workspace_temp_dir("chat-service-export")
+    engine = create_database_engine(f"sqlite+pysqlite:///{(temp_dir / 'chat.sqlite3').resolve()}")
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+    service = ChatService(qa_service=FakeQAService(QAResult(answer="ok", citations=[], tool_calls=[])))
+
+    with session_factory() as db_session:
+        try:
+            service.export_session_markdown(db_session, session_id="missing")
+        except AppError as exc:
+            assert exc.code == "session_not_found"
+        else:  # pragma: no cover
+            raise AssertionError("expected session_not_found")
+
+    engine.dispose()

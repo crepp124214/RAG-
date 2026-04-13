@@ -15,6 +15,21 @@ class SessionListItemData(BaseModel):
     updated_at: str
 
 
+class UpdateSessionRequest(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+
+
+class AutoTitleData(BaseModel):
+    session_id: str
+    title: str
+
+
+class ExportSessionData(BaseModel):
+    session_id: str
+    title: str
+    markdown: str
+
+
 class MessageListItemData(BaseModel):
     id: str
     session_id: str

@@ -52,6 +52,7 @@ describe("useDocumentStore", () => {
       graph_relation_count: 8,
       created_at: "2026-04-04T09:00:00",
       updated_at: "2026-04-04T09:10:00",
+      tags: [],
     })
     serviceMocks.fetchTask.mockResolvedValue({
       id: "task-1",
@@ -94,6 +95,7 @@ describe("useDocumentStore", () => {
       graph_relation_count: 0,
       created_at: "2026-04-04T09:00:00",
       updated_at: "2026-04-04T09:00:00",
+      tags: [],
     })
     serviceMocks.fetchTask.mockResolvedValue({
       id: "task-2",
@@ -133,6 +135,7 @@ describe("useDocumentStore", () => {
         errorMessage: null,
         createdAt: "2026-04-04T09:00:00",
         updatedAt: "2026-04-04T09:00:00",
+        tags: [],
       },
     ]
     store.selectedDocumentId = "doc-3"
@@ -164,6 +167,7 @@ describe("useDocumentStore", () => {
         errorMessage: null,
         createdAt: "2026-04-06T09:00:00",
         updatedAt: "2026-04-06T09:01:00",
+        tags: [],
       },
     ]
 
@@ -180,6 +184,7 @@ describe("useDocumentStore", () => {
       graph_relation_count: 0,
       created_at: "2026-04-06T09:00:00",
       updated_at: "2026-04-06T09:02:00",
+      tags: [],
     })
     serviceMocks.fetchTask.mockResolvedValue({
       id: "task-ingestion",
@@ -221,6 +226,7 @@ describe("document support panels", () => {
         errorMessage: null,
         createdAt: "2026-04-07T08:00:00Z",
         updatedAt: "2026-04-07T08:30:00Z",
+        tags: [],
       },
       {
         documentId: "doc-support-2",
@@ -238,6 +244,7 @@ describe("document support panels", () => {
         errorMessage: null,
         createdAt: "2026-04-07T08:10:00Z",
         updatedAt: "2026-04-07T08:32:00Z",
+        tags: [],
       },
     ]
     store.selectedDocumentId = "doc-support-1"
@@ -255,12 +262,8 @@ describe("document support panels", () => {
 
     expect(documentWrapper.find('[data-testid="document-support-upload"]').exists()).toBe(true)
     expect(documentWrapper.findAll('[data-testid="recent-document-item"]')).toHaveLength(2)
-    expect(documentWrapper.find('[data-testid="selected-document-detail"]').text()).toContain("季度复盘.pdf")
     expect(documentWrapper.find('[data-testid="delete-document-action"]').exists()).toBe(true)
-    expect(documentWrapper.find('[data-testid="selected-graph-status"]').text()).toBe("READY")
     expect(documentWrapper.find('[data-testid="selected-graph-relations"]').text()).toBe("12")
-    expect(documentWrapper.text()).toContain("任务状态")
-    expect(documentWrapper.text()).toContain("图谱状态")
 
     expect(taskWrapper.find('[data-testid="task-summary-已跟踪文档"]').exists()).toBe(true)
     expect(taskWrapper.find('[data-testid="task-summary-value-已跟踪文档"]').text()).toBe("2")

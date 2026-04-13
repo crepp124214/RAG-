@@ -50,8 +50,9 @@ class ChatStreamEvent:
 
 
 class ChatService:
-    def __init__(self, *, qa_service: KnowledgeBaseQAService) -> None:
+    def __init__(self, *, qa_service: KnowledgeBaseQAService, chat_client: Any | None = None) -> None:
         self.qa_service = qa_service
+        self.chat_client = chat_client
 
     def create_session(self, db_session: Session, *, title: str = "新会话") -> ChatSession:
         session = SessionRepository(db_session).add(ChatSession(title=title))
@@ -62,6 +63,108 @@ class ChatService:
 
     def list_sessions(self, db_session: Session) -> list[ChatSession]:
         return SessionRepository(db_session).list_recent()
+
+    def search_sessions(self, db_session: Session, *, keyword: str) -> list[ChatSession]:
+        if not keyword.strip():
+            return self.list_sessions(db_session)
+        return SessionRepository(db_session).search(keyword.strip())
+
+    def update_session(self, db_session: Session, *, session_id: str, title: str | None = None) -> ChatSession:
+        session_repository = SessionRepository(db_session)
+        session = session_repository.get_by_id(session_id)
+        if session is None:
+            raise AppError("会话不存在", code="session_not_found", status_code=404)
+
+        if title is not None:
+            session.title = title
+
+        session_repository.update(session)
+        db_session.commit()
+        db_session.refresh(session)
+        log_event(logger, logging.INFO, "chat.session_updated", session_id=session.id, title=session.title)
+        return session
+
+    def generate_session_title(self, db_session: Session, *, session_id: str) -> str:
+        session = SessionRepository(db_session).get_by_id(session_id)
+        if session is None:
+            raise AppError("会话不存在", code="session_not_found", status_code=404)
+
+        messages = MessageRepository(db_session).list_by_session_id(session_id)
+        if not messages:
+            raise AppError("会话无消息，无法生成标题", code="session_empty", status_code=400)
+
+        first_user_message = next((msg for msg in messages if msg.role == "user"), None)
+        if not first_user_message:
+            raise AppError("会话无用户消息，无法生成标题", code="no_user_message", status_code=400)
+
+        if self.chat_client is None:
+            title = _generate_session_title(first_user_message.content)
+        else:
+            try:
+                system_prompt = "你是一个会话标题生成助手。根据用户的第一条消息，生成一个简洁的会话标题（不超过50字符）。只返回标题文本，不要有其他内容。"
+                user_prompt = f"用户消息：{first_user_message.content}\n\n请生成会话标题："
+                title = self.chat_client.generate(system_prompt=system_prompt, user_prompt=user_prompt)
+                title = title.strip().strip('"').strip("'")[:50]
+            except Exception as exc:
+                logger.warning("chat.auto_title_failed session_id=%s error=%s", session_id, str(exc))
+                title = _generate_session_title(first_user_message.content)
+
+        session.title = title
+        SessionRepository(db_session).update(session)
+        db_session.commit()
+        db_session.refresh(session)
+        log_event(logger, logging.INFO, "chat.title_generated", session_id=session.id, title=title)
+        return title
+
+    def export_session_markdown(self, db_session: Session, *, session_id: str) -> tuple[str, str]:
+        session = SessionRepository(db_session).get_by_id(session_id)
+        if session is None:
+            raise AppError("会话不存在", code="session_not_found", status_code=404)
+
+        messages = MessageRepository(db_session).list_by_session_id(session_id)
+
+        lines = [
+            f"# {session.title}",
+            "",
+            f"**创建时间**: {session.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"**更新时间**: {session.updated_at.strftime('%Y-%m-%d %H:%M:%S')}",
+            "",
+            "---",
+            "",
+        ]
+
+        for message in messages:
+            role_label = "用户" if message.role == "user" else "助手"
+            lines.append(f"## {role_label} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')})")
+            lines.append("")
+            lines.append(message.content)
+            lines.append("")
+
+            if message.citations:
+                lines.append("### 引用")
+                lines.append("")
+                for idx, citation in enumerate(message.citations, 1):
+                    lines.append(f"{idx}. **{citation['document_name']}**")
+                    if citation.get('page_number'):
+                        lines.append(f"   - 页码: {citation['page_number']}")
+                    lines.append(f"   - 内容: {citation['content'][:100]}...")
+                    lines.append("")
+
+            if message.tool_calls:
+                lines.append("### 工具调用")
+                lines.append("")
+                for tool_call in message.tool_calls:
+                    lines.append(f"- **{tool_call['tool_name']}**")
+                    lines.append(f"  - 状态: {tool_call['status']}")
+                    if tool_call.get('result_summary'):
+                        lines.append(f"  - 结果: {tool_call['result_summary']}")
+                    lines.append("")
+
+            lines.append("---")
+            lines.append("")
+
+        log_event(logger, logging.INFO, "chat.session_exported", session_id=session.id, message_count=len(messages))
+        return session.title, "\n".join(lines)
 
     def list_messages(self, db_session: Session, *, session_id: str) -> list[Message]:
         session = SessionRepository(db_session).get_by_id(session_id)

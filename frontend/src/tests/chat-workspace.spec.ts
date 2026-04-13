@@ -19,6 +19,7 @@ describe("ChatWorkspacePanel", () => {
       {
         id: "session-stage-1",
         title: "产品路线讨论",
+        is_pinned: false,
         created_at: "2026-04-07T09:00:00Z",
         updated_at: "2026-04-07T10:00:00Z",
       },

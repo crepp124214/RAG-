@@ -12,6 +12,8 @@ class FakeChatService:
     def __init__(self) -> None:
         self.created_sessions = []
         self.queries = []
+        self.updated_sessions = []
+        self.searched_keywords = []
 
     def create_session(self, db_session, *, title: str = "新会话"):
         from backend.app.models import Session as ChatSession
@@ -30,6 +32,35 @@ class FakeChatService:
         first.created_at = now  # type: ignore[assignment]
         first.updated_at = now  # type: ignore[assignment]
         return [first]
+
+    def search_sessions(self, db_session, *, keyword: str):
+        from backend.app.models import Session as ChatSession
+        from backend.app.models.base import utcnow
+
+        self.searched_keywords.append(keyword)
+        now = utcnow()
+        session = ChatSession(id="session-2", title=f"包含{keyword}的会话")
+        session.created_at = now  # type: ignore[assignment]
+        session.updated_at = now  # type: ignore[assignment]
+        return [session]
+
+    def update_session(self, db_session, *, session_id: str, title: str | None = None):
+        from backend.app.models import Session as ChatSession
+        from backend.app.models.base import utcnow
+
+        self.updated_sessions.append({"session_id": session_id, "title": title})
+        now = utcnow()
+        session = ChatSession(id=session_id, title=title or "更新后的标题")
+        session.created_at = now  # type: ignore[assignment]
+        session.updated_at = now  # type: ignore[assignment]
+        return session
+
+    def generate_session_title(self, db_session, *, session_id: str) -> str:
+        return "自动生成的标题"
+
+    def export_session_markdown(self, db_session, *, session_id: str) -> tuple[str, str]:
+        markdown = f"# 会话 {session_id}\n\n## 用户\n\n测试问题\n\n## 助手\n\n测试回答"
+        return f"会话 {session_id}", markdown
 
     def list_messages(self, db_session, *, session_id: str):
         from backend.app.models import Message
@@ -388,3 +419,71 @@ def test_stream_endpoint_rejects_empty_query() -> None:
     payload = response.json()
     assert payload["success"] is False
     assert payload["error"]["code"] == "validation_error"
+
+
+def test_update_session_endpoint_updates_title() -> None:
+    fake_service = FakeChatService()
+
+    with create_initialized_test_client() as (client, _, _):
+        client.app.dependency_overrides[chat_route_module.get_chat_service] = lambda: fake_service
+        response = client.put(
+            "/api/chat/sessions/session-1",
+            json={"title": "新标题"},
+        )
+        client.app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert payload["data"]["title"] == "新标题"
+    assert len(fake_service.updated_sessions) == 1
+    assert fake_service.updated_sessions[0]["title"] == "新标题"
+
+
+def test_search_sessions_endpoint_filters_by_keyword() -> None:
+    fake_service = FakeChatService()
+
+    with create_initialized_test_client() as (client, _, _):
+        client.app.dependency_overrides[chat_route_module.get_chat_service] = lambda: fake_service
+        response = client.get("/api/chat/sessions?search=Python")
+        client.app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert len(payload["data"]) == 1
+    assert "Python" in payload["data"][0]["title"]
+    assert fake_service.searched_keywords == ["Python"]
+
+
+def test_auto_generate_title_endpoint_returns_generated_title() -> None:
+    fake_service = FakeChatService()
+
+    with create_initialized_test_client() as (client, _, _):
+        client.app.dependency_overrides[chat_route_module.get_chat_service] = lambda: fake_service
+        response = client.post("/api/chat/sessions/session-1/auto-title")
+        client.app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert payload["data"]["session_id"] == "session-1"
+    assert payload["data"]["title"] == "自动生成的标题"
+
+
+def test_export_session_endpoint_returns_markdown() -> None:
+    fake_service = FakeChatService()
+
+    with create_initialized_test_client() as (client, _, _):
+        client.app.dependency_overrides[chat_route_module.get_chat_service] = lambda: fake_service
+        response = client.get("/api/chat/sessions/session-1/export")
+        client.app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert payload["data"]["session_id"] == "session-1"
+    assert payload["data"]["title"] == "会话 session-1"
+    assert "# 会话 session-1" in payload["data"]["markdown"]
+    assert "## 用户" in payload["data"]["markdown"]
+    assert "## 助手" in payload["data"]["markdown"]

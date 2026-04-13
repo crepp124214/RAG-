@@ -2,7 +2,8 @@ import { ApiRequestError, buildApiUrl, requestJson } from "@/services/http"
 
 export interface ChatSession {
   id: string
-  title: string
+  title: string | null
+  is_pinned: boolean
   created_at: string
   updated_at: string
 }
@@ -259,4 +260,77 @@ export async function* streamChat(
       break
     }
   }
+}
+
+export interface UpdateSessionParams {
+  title?: string
+  is_pinned?: boolean
+}
+
+export async function updateSession(
+  sessionId: string,
+  params: UpdateSessionParams,
+): Promise<ChatSession> {
+  const response = await requestJson<ChatSession>(`/api/chat/sessions/${sessionId}`, {
+    method: "PUT",
+    body: JSON.stringify(params),
+  })
+
+  if (!response.data) {
+    throw new Error("服务未返回会话信息。")
+  }
+
+  return response.data
+}
+
+export async function generateSessionTitle(sessionId: string): Promise<ChatSession> {
+  const response = await requestJson<ChatSession>(
+    `/api/chat/sessions/${sessionId}/auto-title`,
+    {
+      method: "POST",
+    },
+  )
+
+  if (!response.data) {
+    throw new Error("服务未返回会话信息。")
+  }
+
+  return response.data
+}
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  await requestJson<null>(`/api/chat/sessions/${sessionId}`, {
+    method: "DELETE",
+  })
+}
+
+export interface SessionSearchParams {
+  search?: string
+}
+
+export async function searchSessions(params: SessionSearchParams): Promise<ChatSession[]> {
+  const queryParams = new URLSearchParams()
+
+  if (params.search) {
+    queryParams.append("search", params.search)
+  }
+
+  const url = queryParams.toString()
+    ? `/api/chat/sessions?${queryParams.toString()}`
+    : "/api/chat/sessions"
+
+  const response = await requestJson<ChatSession[]>(url)
+  return response.data ?? []
+}
+
+export async function exportSession(sessionId: string): Promise<string> {
+  const response = await requestJson<{ content: string }>(
+    `/api/chat/sessions/${sessionId}/export`,
+  )
+
+  if (!response.data) {
+    throw new Error("服务未返回导出内容。")
+  }
+
+  return response.data.content
 }

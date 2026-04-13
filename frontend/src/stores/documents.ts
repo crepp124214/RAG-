@@ -5,8 +5,22 @@ import {
   fetchTask,
   removeDocument,
   uploadDocument,
+  fetchTags,
+  createTag,
+  updateTag,
+  deleteTag,
+  addDocumentTag,
+  removeDocumentTag,
+  setDocumentTags,
+  searchDocuments,
+  batchDeleteDocuments,
+  batchTagDocuments,
+  fetchDocumentPreview,
   type DocumentDetailData,
   type TaskDetailData,
+  type TagData,
+  type DocumentSearchParams,
+  type DocumentPreviewData,
 } from "@/services/documents"
 import { ApiRequestError } from "@/services/http"
 
@@ -36,6 +50,7 @@ export interface DocumentListItem {
   errorMessage: string | null
   createdAt: string
   updatedAt: string
+  tags: TagData[]
 }
 
 interface DocumentState {
@@ -45,6 +60,13 @@ interface DocumentState {
   isHydrating: boolean
   uploadError: string | null
   actionError: string | null
+  tags: TagData[]
+  selectedTags: number[]
+  searchKeyword: string
+  selectedDocuments: Set<string>
+  isLoadingTags: boolean
+  previewData: DocumentPreviewData | null
+  isLoadingPreview: boolean
 }
 
 function readRegistry(): PersistedDocumentEntry[] {
@@ -93,6 +115,7 @@ function mergeDocumentDetail(
     errorMessage: task.error_message,
     createdAt: document.created_at,
     updatedAt: task.updated_at ?? document.updated_at,
+    tags: document.tags ?? [],
   }
 }
 
@@ -112,6 +135,13 @@ export const useDocumentStore = defineStore("documents", {
     isHydrating: false,
     uploadError: null,
     actionError: null,
+    tags: [],
+    selectedTags: [],
+    searchKeyword: "",
+    selectedDocuments: new Set<string>(),
+    isLoadingTags: false,
+    previewData: null,
+    isLoadingPreview: false,
   }),
   getters: {
     selectedItem(state): DocumentListItem | null {
@@ -127,6 +157,30 @@ export const useDocumentStore = defineStore("documents", {
     activeTaskCount(state): number {
       return state.items.filter((item) => !TERMINAL_TASK_STATUSES.has(item.taskStatus)).length
     },
+    filteredItems(state): DocumentListItem[] {
+      let filtered = state.items
+
+      // Filter by search keyword
+      if (state.searchKeyword) {
+        const keyword = state.searchKeyword.toLowerCase()
+        filtered = filtered.filter((item) => item.name.toLowerCase().includes(keyword))
+      }
+
+      // Filter by selected tags
+      if (state.selectedTags.length > 0) {
+        filtered = filtered.filter((item) =>
+          state.selectedTags.some((tagId) => item.tags.some((tag) => tag.id === tagId)),
+        )
+      }
+
+      return filtered
+    },
+    hasSelectedDocuments(state): boolean {
+      return state.selectedDocuments.size > 0
+    },
+    selectedDocumentsCount(state): number {
+      return state.selectedDocuments.size
+    },
   },
   actions: {
     persistRegistry() {
@@ -137,6 +191,215 @@ export const useDocumentStore = defineStore("documents", {
         })),
       )
     },
+
+    async loadTags() {
+      this.isLoadingTags = true
+      this.actionError = null
+
+      try {
+        this.tags = await fetchTags()
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : "加载标签失败。"
+      } finally {
+        this.isLoadingTags = false
+      }
+    },
+
+    async createNewTag(name: string, color: string) {
+      this.actionError = null
+
+      try {
+        const tag = await createTag(name, color)
+        this.tags.push(tag)
+        return tag
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : "创建标签失败。"
+        throw error
+      }
+    },
+
+    async updateExistingTag(tagId: number, name: string, color: string) {
+      this.actionError = null
+
+      try {
+        const updatedTag = await updateTag(tagId, name, color)
+        const index = this.tags.findIndex((tag) => tag.id === tagId)
+        if (index >= 0) {
+          this.tags.splice(index, 1, updatedTag)
+        }
+        return updatedTag
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : "更新标签失败。"
+        throw error
+      }
+    },
+
+    async deleteExistingTag(tagId: number) {
+      this.actionError = null
+
+      try {
+        await deleteTag(tagId)
+        this.tags = this.tags.filter((tag) => tag.id !== tagId)
+        this.selectedTags = this.selectedTags.filter((id) => id !== tagId)
+        this.items = this.items.map((item) => ({
+          ...item,
+          tags: item.tags.filter((tag) => tag.id !== tagId),
+        }))
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : "删除标签失败。"
+        throw error
+      }
+    },
+
+    async addTagToDocument(documentId: string, tagId: number) {
+      this.actionError = null
+
+      try {
+        await addDocumentTag(documentId, tagId)
+        const document = this.items.find((item) => item.documentId === documentId)
+        const tag = this.tags.find((item) => item.id === tagId)
+        if (document && tag && !document.tags.some((item) => item.id === tagId)) {
+          document.tags.push(tag)
+        }
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : "添加文档标签失败。"
+        throw error
+      }
+    },
+
+    async removeTagFromDocument(documentId: string, tagId: number) {
+      this.actionError = null
+
+      try {
+        await removeDocumentTag(documentId, tagId)
+        const document = this.items.find((item) => item.documentId === documentId)
+        if (document) {
+          document.tags = document.tags.filter((tag) => tag.id !== tagId)
+        }
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : "移除文档标签失败。"
+        throw error
+      }
+    },
+
+    async setTagsForDocument(documentId: string, tagIds: number[]) {
+      this.actionError = null
+
+      try {
+        await setDocumentTags(documentId, tagIds)
+        const document = this.items.find((item) => item.documentId === documentId)
+        if (document) {
+          document.tags = this.tags.filter((tag) => tagIds.includes(tag.id))
+        }
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : "设置文档标签失败。"
+        throw error
+      }
+    },
+
+    setSearchKeyword(keyword: string) {
+      this.searchKeyword = keyword
+    },
+
+    setSelectedTags(tagIds: number[]) {
+      this.selectedTags = tagIds
+    },
+
+    clearFilters() {
+      this.searchKeyword = ""
+      this.selectedTags = []
+    },
+
+    toggleDocumentSelection(documentId: string) {
+      if (this.selectedDocuments.has(documentId)) {
+        this.selectedDocuments.delete(documentId)
+      } else {
+        this.selectedDocuments.add(documentId)
+      }
+      this.selectedDocuments = new Set(this.selectedDocuments)
+    },
+
+    selectAllFilteredDocuments() {
+      this.selectedDocuments = new Set(this.filteredItems.map((item) => item.documentId))
+    },
+
+    clearDocumentSelection() {
+      this.selectedDocuments.clear()
+      this.selectedDocuments = new Set()
+    },
+
+    async batchDeleteSelectedDocuments() {
+      const documentIds = Array.from(this.selectedDocuments)
+      if (documentIds.length === 0) {
+        return
+      }
+
+      this.actionError = null
+
+      try {
+        await batchDeleteDocuments(documentIds)
+        documentIds.forEach((documentId) => this.removeLocalItem(documentId))
+        this.clearDocumentSelection()
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : "批量删除文档失败。"
+        throw error
+      }
+    },
+
+    async batchTagSelectedDocuments(tagIds: number[]) {
+      const documentIds = Array.from(this.selectedDocuments)
+      if (documentIds.length === 0) {
+        return
+      }
+
+      this.actionError = null
+
+      try {
+        await batchTagDocuments(documentIds, tagIds)
+        const selectedTags = this.tags.filter((tag) => tagIds.includes(tag.id))
+        this.items = this.items.map((item) => {
+          if (documentIds.includes(item.documentId)) {
+            return { ...item, tags: selectedTags }
+          }
+          return item
+        })
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : "批量设置标签失败。"
+        throw error
+      }
+    },
+
+    async loadDocumentPreview(documentId: string, limit: number = 5) {
+      this.isLoadingPreview = true
+      this.actionError = null
+
+      try {
+        this.previewData = await fetchDocumentPreview(documentId, limit)
+        return this.previewData
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : "加载文档预览失败。"
+        throw error
+      } finally {
+        this.isLoadingPreview = false
+      }
+    },
+
+    clearDocumentPreview() {
+      this.previewData = null
+    },
+
+    async searchWithBackend(params: DocumentSearchParams) {
+      this.actionError = null
+
+      try {
+        return await searchDocuments(params)
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : "搜索文档失败。"
+        throw error
+      }
+    },
+
+
 
     setSelectedDocument(documentId: string | null) {
       this.selectedDocumentId = documentId

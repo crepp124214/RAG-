@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from backend.app.models import Session as ChatSession
@@ -21,3 +21,16 @@ class SessionRepository:
         self.db_session.add(session)
         self.db_session.flush()
         return session
+
+    def update(self, session: ChatSession) -> ChatSession:
+        self.db_session.add(session)
+        self.db_session.flush()
+        return session
+
+    def search(self, keyword: str) -> list[ChatSession]:
+        statement = (
+            select(ChatSession)
+            .where(ChatSession.title.ilike(f"%{keyword}%"))
+            .order_by(ChatSession.updated_at.desc(), ChatSession.created_at.desc())
+        )
+        return list(self.db_session.scalars(statement))

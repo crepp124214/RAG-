@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.deps.database import get_db_session
 from backend.api.schemas.chat import (
+    AutoTitleData,
     ChatQueryData,
     ChatQueryRequest,
     ChatStreamEndData,
@@ -20,8 +21,10 @@ from backend.api.schemas.chat import (
     ChatStreamTokenData,
     CitationData,
     CreateSessionData,
+    ExportSessionData,
     MessageListItemData,
     SessionListItemData,
+    UpdateSessionRequest,
 )
 from backend.api.schemas.response import success_response
 from backend.app.exceptions import AppError
@@ -67,7 +70,7 @@ def get_chat_service(request: Request) -> ChatService:
         chat_client=chat_client,
         tool_orchestrator=ToolOrchestrator(registry=tool_registry, chat_client=chat_client),
     )
-    return ChatService(qa_service=qa_service)
+    return ChatService(qa_service=qa_service, chat_client=chat_client)
 
 
 @router.post('/sessions')
@@ -84,10 +87,14 @@ def create_session(
 
 @router.get('/sessions')
 def list_sessions(
+    search: str | None = None,
     db_session: Session = Depends(get_db_session),
     chat_service: ChatService = Depends(get_chat_service),
 ) -> dict:
-    sessions = chat_service.list_sessions(db_session)
+    if search:
+        sessions = chat_service.search_sessions(db_session, keyword=search)
+    else:
+        sessions = chat_service.list_sessions(db_session)
     return success_response(
         message='获取会话列表成功',
         data=[
@@ -99,6 +106,55 @@ def list_sessions(
             ).model_dump()
             for session in sessions
         ],
+    )
+
+
+@router.put('/sessions/{session_id}')
+def update_session(
+    session_id: str,
+    payload: UpdateSessionRequest,
+    db_session: Session = Depends(get_db_session),
+    chat_service: ChatService = Depends(get_chat_service),
+) -> dict:
+    session = chat_service.update_session(db_session, session_id=session_id, title=payload.title)
+    return success_response(
+        message='会话更新成功',
+        data=SessionListItemData(
+            id=session.id,
+            title=session.title,
+            created_at=session.created_at.isoformat(),
+            updated_at=session.updated_at.isoformat(),
+        ).model_dump(),
+    )
+
+
+@router.post('/sessions/{session_id}/auto-title')
+def auto_generate_title(
+    session_id: str,
+    db_session: Session = Depends(get_db_session),
+    chat_service: ChatService = Depends(get_chat_service),
+) -> dict:
+    title = chat_service.generate_session_title(db_session, session_id=session_id)
+    return success_response(
+        message='标题生成成功',
+        data=AutoTitleData(session_id=session_id, title=title).model_dump(),
+    )
+
+
+@router.get('/sessions/{session_id}/export')
+def export_session(
+    session_id: str,
+    db_session: Session = Depends(get_db_session),
+    chat_service: ChatService = Depends(get_chat_service),
+) -> dict:
+    title, markdown = chat_service.export_session_markdown(db_session, session_id=session_id)
+    return success_response(
+        message='会话导出成功',
+        data=ExportSessionData(
+            session_id=session_id,
+            title=title,
+            markdown=markdown,
+        ).model_dump(),
     )
 
 

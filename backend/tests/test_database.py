@@ -48,6 +48,8 @@ def test_initialize_database_creates_phase_one_tables() -> None:
         "sessions",
         "messages",
         "chunks",
+        "document_tags",
+        "document_tag_relations",
     }
 
 

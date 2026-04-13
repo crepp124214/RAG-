@@ -2,9 +2,14 @@ import { defineStore } from "pinia"
 
 import {
   createSession,
+  deleteSession,
+  exportSession,
   fetchMessages,
   fetchSessions,
+  generateSessionTitle,
+  searchSessions,
   streamChat,
+  updateSession,
   type ChatMessage,
   type ChatSession,
   type Citation,
@@ -34,6 +39,7 @@ interface ChatState {
   isLoadingMessages: boolean
   isSending: boolean
   errorMessage: string | null
+  searchKeyword: string
 }
 
 function readSelectedSessionId(): string | null {
@@ -124,10 +130,29 @@ export const useChatStore = defineStore("chat", {
     isLoadingMessages: false,
     isSending: false,
     errorMessage: null,
+    searchKeyword: "",
   }),
   getters: {
     selectedSession(state): ChatSession | null {
       return state.sessions.find((session) => session.id === state.selectedSessionId) ?? null
+    },
+    filteredSessions(state): ChatSession[] {
+      const keyword = state.searchKeyword.trim().toLowerCase()
+      if (!keyword) {
+        return state.sessions
+      }
+      return state.sessions.filter((session) => {
+        const title = session.title?.toLowerCase() ?? ""
+        return title.includes(keyword)
+      })
+    },
+    sortedSessions(): ChatSession[] {
+      return [...this.filteredSessions].sort((a, b) => {
+        if (a.is_pinned !== b.is_pinned) {
+          return a.is_pinned ? -1 : 1
+        }
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      })
     },
   },
   actions: {
@@ -157,11 +182,106 @@ export const useChatStore = defineStore("chat", {
       this.errorMessage = null
 
       try {
-        this.sessions = await fetchSessions()
+        if (this.searchKeyword.trim()) {
+          this.sessions = await searchSessions({ search: this.searchKeyword.trim() })
+        } else {
+          this.sessions = await fetchSessions()
+        }
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : "加载会话列表失败。"
       } finally {
         this.isLoadingSessions = false
+      }
+    },
+
+    setSearchKeyword(keyword: string) {
+      this.searchKeyword = keyword
+    },
+
+    async searchSessionsByKeyword(keyword: string) {
+      this.searchKeyword = keyword
+      await this.loadSessions()
+    },
+
+    async renameSession(sessionId: string, title: string) {
+      this.errorMessage = null
+
+      try {
+        const updatedSession = await updateSession(sessionId, { title })
+        const index = this.sessions.findIndex((session) => session.id === sessionId)
+        if (index >= 0) {
+          this.sessions[index] = updatedSession
+        }
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : "重命名会话失败。"
+        throw error
+      }
+    },
+
+    async togglePinSession(sessionId: string) {
+      this.errorMessage = null
+
+      try {
+        const session = this.sessions.find((s) => s.id === sessionId)
+        if (!session) {
+          throw new Error("会话不存在。")
+        }
+
+        const updatedSession = await updateSession(sessionId, { is_pinned: !session.is_pinned })
+        const index = this.sessions.findIndex((s) => s.id === sessionId)
+        if (index >= 0) {
+          this.sessions[index] = updatedSession
+        }
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : "置顶会话失败。"
+        throw error
+      }
+    },
+
+    async autoGenerateTitle(sessionId: string) {
+      this.errorMessage = null
+
+      try {
+        const updatedSession = await generateSessionTitle(sessionId)
+        const index = this.sessions.findIndex((session) => session.id === sessionId)
+        if (index >= 0) {
+          this.sessions[index] = updatedSession
+        }
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : "生成标题失败。"
+        throw error
+      }
+    },
+
+    async deleteSession(sessionId: string) {
+      this.errorMessage = null
+
+      try {
+        await deleteSession(sessionId)
+        this.sessions = this.sessions.filter((session) => session.id !== sessionId)
+
+        if (this.selectedSessionId === sessionId) {
+          this.selectedSessionId = null
+          this.messages = []
+
+          if (this.sessions.length > 0) {
+            await this.selectSession(this.sessions[0].id)
+          }
+        }
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : "删除会话失败。"
+        throw error
+      }
+    },
+
+    async exportSessionToMarkdown(sessionId: string): Promise<string> {
+      this.errorMessage = null
+
+      try {
+        return await exportSession(sessionId)
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : "导出会话失败。"
+        throw error
       }
     },
 
