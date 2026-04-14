@@ -1,3 +1,0 @@
-Phase 29 final acceptance text sample dc27d976
-The system supports document upload and task tracking.
-The system supports citation-based answers and session recovery.

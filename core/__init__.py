@@ -1,1 +1,0 @@
-# Core module package for RAG intelligent document retrieval assistant
