@@ -1,4 +1,4 @@
-# RAG 智能文档检索助手
+# 多模态RAG检索问答平台
 
 <div align="center">
 
